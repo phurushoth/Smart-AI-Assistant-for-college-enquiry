@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Achariyan AI · ACET Assistant</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Poppins', sans-serif;
+        }
+
+        body {
+            --primary: #10a37f;
+            --primary-dark: #0e8a6a;
+            --primary-light: #2dcc9f;
+            --primary-glow: rgba(16, 163, 127, 0.2);
+            --bg-light: #f8fafc;
+            --bubble-user: linear-gradient(135deg, #10a37f 0%, #0e8a6a 100%);
+            --bubble-ai: #ffffff;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+            --border-light: #e2e8f0;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            --sidebar-bg: rgba(255,255,255,0.95);
+            --hover-light: #f1f5f9;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e6f3f0 100%);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        body.dark {
+            --primary: #2dcc9f;
+            --primary-dark: #10a37f;
+            --primary-light: #4ade80;
+            --primary-glow: rgba(45, 204, 159, 0.2);
+            --bg-light: #0f172a;
+            --bubble-ai: #1e293b;
+            --text-dark: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border-light: #334155;
+            --sidebar-bg: rgba(30, 41, 59, 0.95);
+            --hover-light: #334155;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
+
+        .app-wrapper {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 32px;
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(12px);
+            box-shadow: var(--shadow-sm);
+            border-bottom: 1px solid var(--border-light);
+            flex-shrink: 0;
+            z-index: 100;
+        }
+        body.dark .header { background: rgba(15, 23, 42, 0.8); }
+
+        .header-left { display: flex; align-items: center; }
+        .logo {
+            width: 44px; height: 44px; border-radius: 14px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white; display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 20px; box-shadow: var(--shadow-md);
+        }
+        .header-text {
+            font-size: 24px; font-weight: 700;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+            margin-left: 14px; letter-spacing: -0.3px;
+        }
+        .new-chat-btn {
+            display: flex; align-items: center; gap: 8px;
+            background: var(--hover-light); border: 1px solid var(--border-light);
+            padding: 8px 18px; border-radius: 40px; cursor: pointer;
+            transition: all 0.2s ease; font-size: 14px; font-weight: 500;
+            color: var(--text-dark);
+        }
+        .new-chat-btn:hover { background: var(--primary); border-color: var(--primary); color: white; transform: translateY(-1px); }
+
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+            min-height: 0;
+        }
+
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 28px 24px;
+            max-width: 880px;
+            width: 100%;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            scroll-behavior: smooth;
+        }
+
+        .message {
+            width: 100%; padding: 16px 24px; margin-bottom: 16px; border-radius: 20px;
+            background: var(--bubble-ai); box-shadow: var(--shadow-sm);
+            animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 15px; line-height: 1.6; white-space: pre-line;
+            transition: transform 0.2s ease;
+        }
+        .message:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .user-message {
+            background: var(--bubble-user); color: white;
+            margin-left: auto; max-width: 85%; border-bottom-right-radius: 6px;
+            box-shadow: var(--shadow-md);
+        }
+        .ai-message {
+            background: var(--bubble-ai); color: var(--text-dark);
+            max-width: 85%; border-bottom-left-radius: 6px; border: 1px solid var(--border-light);
+        }
+
+        .input-container {
+            flex-shrink: 0;
+            padding: 20px 0;
+            background: transparent;
+            z-index: 50;
+        }
+        .input-wrapper {
+            max-width: 820px;
+            margin: 0 auto;
+            background: var(--bubble-ai);
+            border-radius: 60px;
+            border: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            padding: 8px 12px 8px 20px;
+            box-shadow: var(--shadow-lg);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(8px);
+        }
+        .input-wrapper:focus-within {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow), var(--shadow-lg);
+            transform: translateY(-1px);
+        }
+        .message-input {
+            flex: 1; border: none; background: transparent; padding: 12px 8px;
+            font-size: 16px; outline: none; resize: none; max-height: 150px;
+            color: var(--text-dark);
+            font-family: inherit;
+        }
+        .message-input::placeholder { color: var(--text-muted); }
+
+        .icon-button {
+            background: transparent; border: none; color: var(--text-muted);
+            font-size: 20px; cursor: pointer; padding: 10px; border-radius: 50%;
+            transition: all 0.2s ease; width: 44px; height: 44px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .icon-button:hover { background: var(--hover-light); color: var(--primary); transform: scale(1.05); }
+        .icon-button.active { background: var(--primary); color: white; }
+
+        .welcome-screen { text-align: center; margin: auto; padding: 40px 20px; animation: fadeIn 0.5s ease; }
+        .welcome-title {
+            font-size: 42px; font-weight: 800; margin-bottom: 16px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+        }
+        .welcome-subtitle { font-size: 17px; color: var(--text-muted); margin-bottom: 32px; line-height: 1.5; }
+        .suggested-prompts { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+        .prompt-bubble {
+            background: var(--bubble-ai); border: 1px solid var(--border-light);
+            padding: 10px 20px; border-radius: 40px; cursor: pointer;
+            transition: all 0.2s ease; box-shadow: var(--shadow-sm);
+            font-size: 14px; font-weight: 500; color: var(--text-dark);
+        }
+        .prompt-bubble:hover { background: var(--primary); border-color: var(--primary); color: white; transform: translateY(-2px); }
+
+        .voice-indicator {
+            display: none; align-items: center; justify-content: center; padding: 16px 20px;
+            background: var(--bubble-ai); border-radius: 60px; margin-bottom: 16px;
+            box-shadow: var(--shadow-md); border: 1px solid var(--border-light);
+            width: fit-content; align-self: center;
+        }
+        .voice-icon { margin-right: 10px; color: var(--primary); animation: pulse 1s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+        .right-sidebar {
+            position: fixed; right: 0; top: 72px; width: 280px;
+            height: calc(100vh - 72px); background: var(--sidebar-bg);
+            backdrop-filter: blur(16px); border-left: 1px solid var(--border-light);
+            display: flex; flex-direction: column; padding: 20px; overflow-y: auto;
+            z-index: 200; transition: all 0.3s ease; box-shadow: -4px 0 20px rgba(0,0,0,0.05);
+        }
+        .admin-btn {
+            width: 100%; padding: 12px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white; border: none; border-radius: 12px; font-weight: 600;
+            cursor: pointer; transition: all 0.2s ease; font-size: 14px;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .admin-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+        .sidebar-section-title {
+            font-weight: 700; font-size: 13px; text-transform: uppercase;
+            letter-spacing: 0.5px; color: var(--text-muted); margin: 20px 0 12px 0;
+        }
+        .chat-history { flex: 1; overflow-y: auto; margin-bottom: 12px; }
+        .chat-item {
+            padding: 10px 14px; background: var(--hover-light); border-radius: 10px;
+            margin-bottom: 8px; cursor: pointer; overflow: hidden;
+            text-overflow: ellipsis; white-space: nowrap; transition: all 0.2s ease;
+            font-size: 13px; color: var(--text-dark);
+        }
+        .chat-item:hover { background: var(--primary); color: white; transform: translateX(4px); }
+        .delete-history-btn, .theme-toggle-btn, .voice-toggle-btn {
+            width: 100%; margin-top: 8px; padding: 10px; border-radius: 10px;
+            border: 1px solid var(--border-light); background: var(--bubble-ai);
+            cursor: pointer; transition: all 0.2s ease; font-size: 13px;
+            font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 8px;
+            color: var(--text-dark);
+        }
+        .delete-history-btn { border-color: #ef4444; color: #ef4444; }
+        .delete-history-btn:hover { background: #ef4444; color: white; }
+        .voice-toggle-btn.voice-off { background: #ef4444; color: white; border-color: #ef4444; }
+
+        @media (max-width: 768px) { 
+            .right-sidebar { display: none; } 
+            .chat-container { margin-right: 0; padding: 20px 16px; }
+            .header { padding: 12px 20px; }
+            .header-text { font-size: 18px; }
+            .logo { width: 36px; height: 36px; font-size: 16px; }
+            .new-chat-btn { padding: 6px 14px; font-size: 12px; }
+            .welcome-title { font-size: 28px; }
+            .welcome-subtitle { font-size: 14px; }
+        }
+        
+        .name-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+        .name-card {
+            background: var(--bubble-ai);
+            border-radius: 28px;
+            padding: 32px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-light);
+        }
+        .name-card h2 {
+            font-size: 24px;
+            margin-bottom: 12px;
+            color: var(--text-dark);
+        }
+        .name-card p {
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+        .name-input {
+            width: 100%;
+            padding: 14px 18px;
+            border: 1px solid var(--border-light);
+            border-radius: 60px;
+            font-size: 16px;
+            margin-bottom: 16px;
+            background: var(--bubble-ai);
+            color: var(--text-dark);
+            outline: none;
+        }
+        .name-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+        }
+        .name-submit {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border: none;
+            border-radius: 60px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .skip-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            margin-top: 12px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-wrapper">
+        <div class="header">
+            <div class="header-left">
+                <div class="logo">A</div>
+                <div class="header-text" id="aiNameDisplay">Achariyan AI</div>
+            </div>
+            <div class="new-chat-btn" id="newChatBtn">
+                <i class="fas fa-plus-circle"></i> New Chat
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="chat-container" id="chatContainer">
+                <div class="welcome-screen" id="welcomeScreen">
+                    <div class="welcome-title" id="welcomeTitle">Hello! I'm Achariyan AI</div>
+                    <div class="welcome-subtitle" id="welcomeSubtitle">Ask me anything about ACET — admissions, courses, placements, transport, hostel, and more.</div>
+                    <div class="suggested-prompts">
+                        <div class="prompt-bubble" data-prompt="CSE department HOD?">👩‍🏫 CSE HOD</div>
+                        <div class="prompt-bubble" data-prompt="What is the total fees for CSE?">💰 CSE Fees</div>
+                        <div class="prompt-bubble" data-prompt="List all CSE labs">🔬 CSE Labs</div>
+                        <div class="prompt-bubble" data-prompt="Tell me about Dr. Kannagi">🕊️ Dr. Kannagi</div>
+                        <div class="prompt-bubble" data-prompt="Cuddalore bus timings?">🚌 Cuddalore Bus</div>
+                        <div class="prompt-bubble" data-prompt="Who is the Principal?">👨‍🏫 Principal</div>
+                        <div class="prompt-bubble" data-prompt="Placement package?">💼 Placements</div>
+                        <div class="prompt-bubble" data-prompt="Hostel fee?">🏠 Hostel</div>
+                    </div>
+                </div>
+                <div class="voice-indicator" id="voiceIndicator">
+                    <i class="fas fa-microphone voice-icon"></i>
+                    <span>Listening...</span>
+                </div>
+            </div>
+
+            <div class="right-sidebar" id="rightSidebar">
+                <button class="admin-btn" id="adminBtn"><i class="fas fa-user-shield"></i> Admin Panel</button>
+                <div class="sidebar-section-title"><i class="fas fa-volume-up"></i> Preferences</div>
+                <button class="voice-toggle-btn" id="voiceToggleBtn">
+                    <i class="fas fa-volume-up"></i> Voice Response: ON
+                </button>
+                <div class="sidebar-section-title"><i class="fas fa-user"></i> Profile</div>
+                <button class="delete-history-btn" id="resetNameBtn" style="border-color: var(--primary); color: var(--primary);">
+                    <i class="fas fa-user-edit"></i> Change My Name
+                </button>
+                <div class="sidebar-section-title"><i class="fas fa-history"></i> Chat History</div>
+                <div class="chat-history" id="chatHistory"></div>
+                <button class="delete-history-btn" id="deleteHistoryBtn"><i class="fas fa-trash"></i> Clear History</button>
+                <button class="theme-toggle-btn" id="themeToggle"><i class="fas fa-moon"></i> Dark Mode</button>
+            </div>
+        </div>
+
+        <div class="input-container">
+            <div class="input-wrapper">
+                <button class="icon-button" id="voiceButton" title="Voice Input"><i class="fas fa-microphone"></i></button>
+                <textarea class="message-input" id="messageInput" placeholder="Ask anything about ACET..." rows="1"></textarea>
+                <button class="icon-button" id="sendButton" title="Send Message"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ========== COMPLETE ACET DATASET ==========
+            const ACET = {
+                overview: {
+                    principal: "Dr. S. Gurulingam",
+                    principalContact: { mobile: "9442277107", email: "acethead@achariya.org" },
+                    established: "2010",
+                    founder: "Dr. J. Arawindhan",
+                    location: "Achariyapuram, Villianur, Puducherry–605110, India",
+                    contact: { phone: "0413-2660164", tollFree: "1800-8901-969", email: "admission.acet@achariya.org" }
+                },
+                departments: {
+                    cse: { 
+                        name: "Computer Science & Engineering", 
+                        hod: "Dr. A. Kannaki @ Vasantha Azhagu", 
+                        hodQual: "Ph.D.", 
+                        established: "2010", 
+                        intake: 120, 
+                        labs: 16,
+                        fees: "₹1,85,000 (total for 4 years)",
+                        labsList: [
+                            "1. Database Management Systems Lab",
+                            "2. Software Engineering Lab",
+                            "3. Computer Networks Lab",
+                            "4. Data Structures & C Lab",
+                            "5. Microprocessor Lab",
+                            "6. Visual Programming Lab",
+                            "7. Compiler Design Lab",
+                            "8. Cyber Security Lab",
+                            "9. Computer Organization & Architecture Lab",
+                            "10. Programming for Problem Solving Lab",
+                            "11. Operating Systems Lab",
+                            "12. Java Programming Lab",
+                            "13. Design and Analysis of Algorithm Lab",
+                            "14. Web Technology Lab",
+                            "15. IT Workshop Lab",
+                            "16. Digital Electronics & Systems Lab"
+                        ]
+                    },
+                    "ai & ds": { name: "Artificial Intelligence & Data Science", hod: "Mrs. S. Rajalakshmi", hodQual: "M.Tech (Ph.D)", established: "2020", intake: 60, labs: 8, fees: "₹2,00,000" },
+                    ece: { name: "Electronics & Communication Engineering", hod: "Prof. F. D. Anfnston", hodQual: "M.E., (Ph.D)", intake: 60, labs: 7, fees: "₹1,80,000" },
+                    eee: { name: "Electrical & Electronics Engineering", hod: "Prof. V. Anandakumar", hodQual: "M.E. (Power Systems)", intake: 60, labs: 10, fees: "₹1,75,000" },
+                    mech: { name: "Mechanical Engineering", hod: "Dr. G. Anand", hodQual: "Ph.D.", intake: 60, labs: 12, fees: "₹1,70,000" }
+                },
+                placements: { avgPackage: "2.75 LPA", highest: "12 LPA", recruiters: ["TCS", "Infosys", "Cognizant", "Amazon", "Zoho", "Hyundai", "L&T", "IBM", "Accenture", "Wipro"] },
+                transport: {
+                    buses: 25, vans: 47, routes: ["Puducherry", "Villupuram", "Tindivanam", "Cuddalore"],
+                    routeDetails: {
+                        cuddalore: { timings: "Morning 6:15 AM (Old Bus Stand), 6:30 AM (New Bus Stand). Return: 4:45 PM.", fee: "₹9,000 - ₹10,000 per semester" },
+                        villupuram: { timings: "Morning 6:45 AM from Bus Stand. Return: 4:30 PM.", fee: "₹10,000 - ₹12,000 per semester" }
+                    }
+                },
+                hostel: { capacity: 700, fee: "₹40,000 – ₹60,000 per semester", rooms: "AC and Non-AC available" },
+                library: { books: 16725, timings: "8:45 AM – 7:00 PM (weekdays)" },
+                fees: { btechRange: "₹1,70,000 – ₹2,20,000 for 4 years" }
+            };
+
+            const emotionalResponses = {
+                kannagi: `Dr. A. Kannaki (Vasantha Azhagu), former Head of CSE, passed away on 16th February 2026. She was a dedicated educator known for her kindness and student-friendly nature. Her legacy continues to inspire. 🌸`,
+                sethuraman: `Prof. Sethuraman, a beloved Mathematics professor, passed away on 19th January 2026. He was known for making complex concepts simple and his warm approach with students. 🙏`
+            };
+
+            let userName = localStorage.getItem('acetUserName') || null;
+            let aiName = localStorage.getItem('acetAiName') || 'Achariyan AI';
+            let voiceResponseEnabled = localStorage.getItem('voiceResponseEnabled') !== 'false';
+            let chatHistory = JSON.parse(localStorage.getItem('acetHistory')) || [];
+            let isDark = localStorage.getItem('acetDark') === 'true';
+
+            const chatContainer = document.getElementById('chatContainer');
+            const welcomeScreen = document.getElementById('welcomeScreen');
+            const welcomeTitle = document.getElementById('welcomeTitle');
+            const welcomeSubtitle = document.getElementById('welcomeSubtitle');
+            const aiNameDisplay = document.getElementById('aiNameDisplay');
+            const messageInput = document.getElementById('messageInput');
+            const sendButton = document.getElementById('sendButton');
+            const voiceButton = document.getElementById('voiceButton');
+            const voiceIndicator = document.getElementById('voiceIndicator');
+            const chatHistoryDiv = document.getElementById('chatHistory');
+            const deleteBtn = document.getElementById('deleteHistoryBtn');
+            const resetNameBtn = document.getElementById('resetNameBtn');
+            const themeToggle = document.getElementById('themeToggle');
+            const adminBtn = document.getElementById('adminBtn');
+            const newChatBtn = document.getElementById('newChatBtn');
+            const voiceToggleBtn = document.getElementById('voiceToggleBtn');
+
+            function scrollToBottom() { chatContainer.scrollTop = chatContainer.scrollHeight; }
+
+            function updateNameDisplay() {
+                aiNameDisplay.textContent = aiName;
+                if (userName) {
+                    welcomeTitle.textContent = `Hello, ${userName}! I'm ${aiName}`;
+                } else {
+                    welcomeTitle.textContent = `Hello! I'm ${aiName}`;
+                }
+            }
+
+            function showNameCollection() {
+                const overlay = document.createElement('div');
+                overlay.className = 'name-overlay';
+                overlay.innerHTML = `
+                    <div class="name-card">
+                        <h2>👋 Welcome!</h2>
+                        <p>Let's get to know each other</p>
+                        <input type="text" class="name-input" id="userNameInput" placeholder="What's your name?" autocomplete="off">
+                        <input type="text" class="name-input" id="aiNameInput" placeholder="What would you like to call me?" autocomplete="off">
+                        <button class="name-submit" id="nameSubmitBtn">Start Chatting</button>
+                        <button class="skip-btn" id="skipNameBtn">Skip for now</button>
+                    </div>
+                `;
+                document.body.appendChild(overlay);
+                document.getElementById('nameSubmitBtn').addEventListener('click', () => {
+                    const newUserName = document.getElementById('userNameInput').value.trim();
+                    const newAiName = document.getElementById('aiNameInput').value.trim();
+                    if (newUserName) userName = newUserName;
+                    if (newAiName) aiName = newAiName;
+                    if (userName) localStorage.setItem('acetUserName', userName);
+                    if (aiName) localStorage.setItem('acetAiName', aiName);
+                    updateNameDisplay();
+                    overlay.remove();
+                    addMessage(`Hi${userName ? ' ' + userName : ''}! I'm ${aiName}. Ask me anything about ACET.`, 'ai');
+                });
+                document.getElementById('skipNameBtn').addEventListener('click', () => overlay.remove());
+            }
+
+            function resetName() {
+                userName = null;
+                aiName = 'Achariyan AI';
+                localStorage.removeItem('acetUserName');
+                localStorage.setItem('acetAiName', aiName);
+                updateNameDisplay();
+                showNameCollection();
+            }
+
+            function updateVoiceToggleUI() {
+                if (voiceResponseEnabled) {
+                    voiceToggleBtn.innerHTML = '<i class="fas fa-volume-up"></i> Voice Response: ON';
+                    voiceToggleBtn.classList.remove('voice-off');
+                } else {
+                    voiceToggleBtn.innerHTML = '<i class="fas fa-volume-mute"></i> Voice Response: OFF';
+                    voiceToggleBtn.classList.add('voice-off');
+                }
+            }
+            
+            voiceToggleBtn.addEventListener('click', () => {
+                voiceResponseEnabled = !voiceResponseEnabled;
+                localStorage.setItem('voiceResponseEnabled', voiceResponseEnabled);
+                updateVoiceToggleUI();
+                if (window.speechSynthesis) window.speechSynthesis.cancel();
+            });
+
+            function speakResponse(text) {
+                if (!voiceResponseEnabled || !window.speechSynthesis) return;
+                if (window.speechSynthesis.speaking) window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 0.9;
+                window.speechSynthesis.speak(utterance);
+            }
+
+            const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+            let recognition = null;
+            if (SpeechRec) {
+                recognition = new SpeechRec();
+                recognition.continuous = false; recognition.lang = 'en-US';
+                recognition.onstart = () => { voiceIndicator.style.display = 'flex'; voiceButton.classList.add('active'); };
+                recognition.onend = () => { voiceIndicator.style.display = 'none'; voiceButton.classList.remove('active'); };
+                recognition.onresult = (e) => { messageInput.value = e.results[0][0].transcript; sendMessage(); };
+                recognition.onerror = () => voiceIndicator.style.display = 'none';
+            } else voiceButton.style.display = 'none';
+            
+            voiceButton.addEventListener('click', () => { if (recognition) recognition.start(); else alert("Voice not supported"); });
+
+            function addMessage(text, sender, animate = true) {
+                const msgDiv = document.createElement('div');
+                msgDiv.classList.add('message', sender === 'user' ? 'user-message' : 'ai-message');
+                msgDiv.textContent = text;
+                if (animate) msgDiv.style.animation = 'fadeIn 0.3s ease';
+                chatContainer.appendChild(msgDiv);
+                scrollToBottom();
+            }
+
+            function renderHistory() {
+                chatHistoryDiv.innerHTML = '';
+                if (chatHistory.length === 0) {
+                    chatHistoryDiv.innerHTML = '<div class="chat-item" style="cursor:default; text-align:center;">No history</div>';
+                    return;
+                }
+                [...chatHistory].reverse().forEach((item) => {
+                    const div = document.createElement('div');
+                    div.className = 'chat-item';
+                    div.textContent = item.q.length > 35 ? item.q.substr(0,35)+'…' : item.q;
+                    div.addEventListener('click', () => {
+                        resetToWelcomeScreen();
+                        item.messages.forEach(m => addMessage(m.text, m.sender, false));
+                        welcomeScreen.style.display = 'none';
+                    });
+                    chatHistoryDiv.appendChild(div);
+                });
+            }
+
+            function saveHistory(userQ, aiA) {
+                const messages = Array.from(document.querySelectorAll('.message')).map(m => ({
+                    text: m.textContent, sender: m.classList.contains('user-message') ? 'user' : 'ai'
+                }));
+                chatHistory.push({ q: userQ, a: aiA, messages: messages });
+                if (chatHistory.length > 30) chatHistory.shift();
+                localStorage.setItem('acetHistory', JSON.stringify(chatHistory));
+                renderHistory();
+            }
+
+            function resetToWelcomeScreen() {
+                document.querySelectorAll('.message').forEach(m => m.remove());
+                welcomeScreen.style.display = 'block';
+                if (window.speechSynthesis) window.speechSynthesis.cancel();
+                messageInput.value = '';
+                messageInput.style.height = 'auto';
+            }
+
+            // 🎯 FIXED RESPONSE ENGINE - Proper routing for each query type
+            function getResponse(q) {
+                const text = q.toLowerCase().trim();
+                
+                // Greetings
+                if (text === 'hi' || text === 'hello' || text === 'hey' || text === 'hii' || text === 'hiii') {
+                    return `Hey${userName ? ' ' + userName : ''}! 👋 Ask me anything about ACET.`;
+                }
+                if (text.includes('how are you')) {
+                    return `I'm good${userName ? ', ' + userName : ''}! Ready to help with your ACET questions.`;
+                }
+                if (text.includes('thank')) {
+                    return `You're welcome${userName ? ' ' + userName : ''}! 😊`;
+                }
+                
+                // Emotional tributes
+                if (text.includes('kannagi') || text.includes('kannaki')) return emotionalResponses.kannagi;
+                if (text.includes('sethuraman')) return emotionalResponses.sethuraman;
+                
+                // ============= FEES QUERIES =============
+                if (text.includes('fee') || text.includes('cost') || text.includes('price') || text.includes('total')) {
+                    if (text.includes('cse')) {
+                        return `💰 CSE total fees: ${ACET.departments.cse.fees}`;
+                    }
+                    if (text.includes('ai') || text.includes('data science')) {
+                        return `💰 AI & DS total fees: ${ACET.departments["ai & ds"].fees}`;
+                    }
+                    if (text.includes('ece')) {
+                        return `💰 ECE total fees: ${ACET.departments.ece.fees}`;
+                    }
+                    if (text.includes('eee')) {
+                        return `💰 EEE total fees: ${ACET.departments.eee.fees}`;
+                    }
+                    if (text.includes('mech') || text.includes('mechanical')) {
+                        return `💰 Mechanical Engineering total fees: ${ACET.departments.mech.fees}`;
+                    }
+                    return `💰 B.Tech fees range from ${ACET.fees.btechRange} depending on branch. Ask about specific branch like CSE, ECE, etc.`;
+                }
+                
+                // ============= LABS QUERIES =============
+                if (text.includes('lab') && (text.includes('list') || text.includes('all') || text.includes('name'))) {
+                    if (text.includes('cse')) {
+                        return `🔬 **CSE Laboratories (${ACET.departments.cse.labs} labs):**\n${ACET.departments.cse.labsList.join('\n')}`;
+                    }
+                    if (text.includes('cse') && text.includes('how many')) {
+                        return `CSE department has ${ACET.departments.cse.labs} laboratories.`;
+                    }
+                    return `Each department has specialized labs. Ask for "CSE labs list" to see all 16 CSE labs.`;
+                }
+                
+                if (text.includes('how many labs') && text.includes('cse')) {
+                    return `CSE department has ${ACET.departments.cse.labs} laboratories.`;
+                }
+                
+                // ============= HOD QUERIES =============
+                if ((text.includes('hod') || text.includes('head')) && !text.includes('fees')) {
+                    if (text.includes('cse')) {
+                        return `👩‍🏫 CSE HOD: ${ACET.departments.cse.hod} (${ACET.departments.cse.hodQual})`;
+                    }
+                    if (text.includes('ece')) {
+                        return `👨‍🏫 ECE HOD: ${ACET.departments.ece.hod} (${ACET.departments.ece.hodQual})`;
+                    }
+                    if (text.includes('eee')) {
+                        return `👨‍🏫 EEE HOD: ${ACET.departments.eee.hod} (${ACET.departments.eee.hodQual})`;
+                    }
+                    if (text.includes('mech') || text.includes('mechanical')) {
+                        return `👨‍🏫 Mechanical HOD: ${ACET.departments.mech.hod} (${ACET.departments.mech.hodQual})`;
+                    }
+                    if (text.includes('ai') || text.includes('data science')) {
+                        return `👩‍🏫 AI & DS HOD: ${ACET.departments["ai & ds"].hod} (${ACET.departments["ai & ds"].hodQual})`;
+                    }
+                }
+                
+                // ============= INTAKE/SEATS QUERIES =============
+                if (text.includes('intake') || text.includes('seats')) {
+                    if (text.includes('cse')) {
+                        return `CSE intake: ${ACET.departments.cse.intake} students per year.`;
+                    }
+                    if (text.includes('ece')) {
+                        return `ECE intake: ${ACET.departments.ece.intake} students per year.`;
+                    }
+                }
+                
+                // ============= TRANSPORT QUERIES =============
+                if (text.includes('cuddalore')) {
+                    const r = ACET.transport.routeDetails.cuddalore;
+                    return `🚌 Cuddalore: ${r.timings} | Fee: ${r.fee}`;
+                }
+                if (text.includes('villupuram')) {
+                    const r = ACET.transport.routeDetails.villupuram;
+                    return `🚌 Villupuram: ${r.timings} | Fee: ${r.fee}`;
+                }
+                if (text.includes('transport') || text.includes('bus')) {
+                    return `ACET runs ${ACET.transport.buses} buses covering ${ACET.transport.routes.join(', ')}. Ask about Cuddalore or Villupuram for timings.`;
+                }
+                
+                // ============= PRINCIPAL =============
+                if (text.includes('principal')) {
+                    return `👨‍🏫 Principal: ${ACET.overview.principal} | 📞 ${ACET.overview.principalContact.mobile} | 📧 ${ACET.overview.principalContact.email}`;
+                }
+                
+                // ============= PLACEMENTS =============
+                if (text.includes('placement') || text.includes('package') || text.includes('company')) {
+                    return `💼 Placements: Avg ${ACET.placements.avgPackage}, Highest ${ACET.placements.highest}. Recruiters: ${ACET.placements.recruiters.slice(0,8).join(', ')}`;
+                }
+                
+                // ============= HOSTEL =============
+                if (text.includes('hostel')) {
+                    return `🏨 Hostel: ${ACET.hostel.capacity} capacity, ${ACET.hostel.rooms} rooms, Fee: ${ACET.hostel.fee}`;
+                }
+                
+                // ============= LIBRARY =============
+                if (text.includes('library')) {
+                    return `📚 Library: ${ACET.library.books} books, Timings: ${ACET.library.timings}`;
+                }
+                
+                // ============= COLLEGE INFO =============
+                if (text.includes('established')) return `ACET established in ${ACET.overview.established}.`;
+                if (text.includes('founder')) return `Founder: ${ACET.overview.founder}`;
+                if (text.includes('contact') && !text.includes('principal')) return `📞 ${ACET.overview.contact.phone} | Toll free: ${ACET.overview.contact.tollFree} | 📧 ${ACET.overview.contact.email}`;
+                
+                // ============= DEFAULT =============
+                return `Ask me about ACET — fees, HODs, labs, placements, transport, hostel, or anything else. I'm here to help!`;
+            }
+
+            function sendMessage() {
+                const q = messageInput.value.trim();
+                if (!q) return;
+                welcomeScreen.style.display = 'none';
+                addMessage(q, 'user');
+                messageInput.value = '';
+                messageInput.style.height = 'auto';
+                
+                setTimeout(() => {
+                    const answer = getResponse(q);
+                    addMessage(answer, 'ai');
+                    saveHistory(q, answer);
+                    speakResponse(answer);
+                }, 200);
+            }
+
+            sendButton.addEventListener('click', sendMessage);
+            messageInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
+            messageInput.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 150) + 'px'; });
+            
+            document.querySelectorAll('.prompt-bubble').forEach(b => {
+                b.addEventListener('click', () => { messageInput.value = b.getAttribute('data-prompt'); sendMessage(); });
+            });
+            
+            newChatBtn.addEventListener('click', resetToWelcomeScreen);
+            resetNameBtn.addEventListener('click', resetName);
+            deleteBtn.addEventListener('click', () => { 
+                if(confirm('Delete all history?')) { 
+                    localStorage.removeItem('acetHistory'); 
+                    chatHistory = []; 
+                    renderHistory(); 
+                    resetToWelcomeScreen(); 
+                } 
+            });
+            themeToggle.addEventListener('click', () => { 
+                document.body.classList.toggle('dark'); 
+                isDark = !isDark; 
+                localStorage.setItem('acetDark', isDark); 
+                themeToggle.innerHTML = isDark ? '<i class="fas fa-sun"></i> Light Mode' : '<i class="fas fa-moon"></i> Dark Mode'; 
+            });
+            adminBtn.addEventListener('click', () => { alert('Admin panel access (secure).'); });
+
+            if (isDark) { document.body.classList.add('dark'); themeToggle.innerHTML = '<i class="fas fa-sun"></i> Light Mode'; }
+            updateNameDisplay();
+            updateVoiceToggleUI();
+            renderHistory();
+            if (!userName) setTimeout(showNameCollection, 500);
+        })();
+    </script>
+</body>
+</html>
