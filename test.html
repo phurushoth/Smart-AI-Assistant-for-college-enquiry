@@ -77,7 +77,19 @@
         }
         body.dark .header { background: rgba(15, 23, 42, 0.8); }
 
-        .header-left { display: flex; align-items: center; }
+        .header-left { display: flex; align-items: center; gap: 12px; }
+        .menu-toggle {
+            display: none;
+            background: transparent;
+            border: none;
+            font-size: 22px;
+            color: var(--text-dark);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+        .menu-toggle:hover { background: var(--hover-light); }
         .logo {
             width: 40px; height: 40px; border-radius: 12px;
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
@@ -88,16 +100,24 @@
             font-size: 20px; font-weight: 700;
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             -webkit-background-clip: text; background-clip: text; color: transparent;
-            margin-left: 12px; letter-spacing: -0.3px;
+            letter-spacing: -0.3px;
         }
-        .new-chat-btn {
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .admin-header-btn {
             display: flex; align-items: center; gap: 8px;
-            background: var(--hover-light); border: 1px solid var(--border-light);
-            padding: 6px 16px; border-radius: 40px; cursor: pointer;
-            transition: all 0.2s ease; font-size: 13px; font-weight: 500;
-            color: var(--text-dark);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white; border: none; padding: 6px 16px; border-radius: 40px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: var(--shadow-sm);
         }
-        .new-chat-btn:hover { background: var(--primary); border-color: var(--primary); color: white; transform: translateY(-1px); }
+        .admin-header-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); opacity: 0.95; }
 
         .main-content {
             display: flex;
@@ -125,6 +145,7 @@
             animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             font-size: 15px; line-height: 1.55; white-space: pre-line;
             transition: transform 0.2s ease;
+            position: relative;
         }
         .message:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -137,8 +158,28 @@
             background: var(--bubble-ai); color: var(--text-dark);
             max-width: 85%; border-bottom-left-radius: 6px; border: 1px solid var(--border-light);
         }
+        
+        .message-share-btn {
+            position: absolute;
+            bottom: 8px;
+            right: 12px;
+            background: rgba(0,0,0,0.1);
+            border: none;
+            border-radius: 20px;
+            padding: 4px 10px;
+            font-size: 11px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .message:hover .message-share-btn { opacity: 1; }
+        .message-share-btn:hover { background: var(--primary); color: white; }
+        body.dark .message-share-btn { background: rgba(255,255,255,0.15); }
 
-        /* FIXED INPUT CONTAINER - CRITICAL MOBILE FIX */
         .input-container {
             flex-shrink: 0;
             padding: 14px 16px 18px 16px;
@@ -218,408 +259,1046 @@
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
 
         .right-sidebar {
-            position: fixed; right: 0; top: 70px; width: 280px;
+            position: fixed; right: 0; top: 70px; width: 300px;
             height: calc(100vh - 70px); background: var(--sidebar-bg);
             backdrop-filter: blur(16px); border-left: 1px solid var(--border-light);
             display: flex; flex-direction: column; padding: 20px; overflow-y: auto;
-            z-index: 200; transition: all 0.3s ease; box-shadow: -4px 0 20px rgba(0,0,0,0.05);
+            z-index: 200;
         }
-        .admin-btn {
-            width: 100%; padding: 12px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: white; border: none; border-radius: 12px; font-weight: 600;
-            cursor: pointer; transition: all 0.2s ease; font-size: 14px;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
+
+        .mobile-drawer {
+            position: fixed;
+            top: 0;
+            left: -100%;
+            width: 85%;
+            max-width: 320px;
+            height: 100vh;
+            background: var(--sidebar-bg);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            transition: left 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: 4px 0 20px rgba(0,0,0,0.2);
+            border-right: 1px solid var(--border-light);
         }
-        .admin-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+        .mobile-drawer.open { left: 0; }
+        .drawer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+            display: none;
+        }
+        .drawer-overlay.open { display: block; }
+        .drawer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-light);
+        }
+        .drawer-header h3 { color: var(--text-dark); font-size: 18px; display: flex; align-items: center; gap: 8px; }
+        .close-drawer {
+            background: transparent;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+
         .sidebar-section-title {
             font-weight: 700; font-size: 12px; text-transform: uppercase;
             letter-spacing: 0.5px; color: var(--text-muted); margin: 18px 0 10px 0;
         }
+        .sidebar-section-title:first-of-type { margin-top: 0; }
+        .new-chat-sidebar-btn {
+            width: 100%; padding: 12px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white; border: none; border-radius: 12px; font-weight: 600;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            margin-bottom: 16px;
+        }
+        
         .chat-history { flex: 1; overflow-y: auto; margin-bottom: 12px; }
         .chat-item {
-            padding: 10px 14px; background: var(--hover-light); border-radius: 10px;
-            margin-bottom: 8px; cursor: pointer; overflow: hidden;
-            text-overflow: ellipsis; white-space: nowrap; transition: all 0.2s ease;
-            font-size: 13px; color: var(--text-dark);
+            padding: 10px 12px; background: var(--hover-light); border-radius: 10px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
         }
-        .chat-item:hover { background: var(--primary); color: white; transform: translateX(4px); }
-        .delete-history-btn, .theme-toggle-btn, .voice-toggle-btn {
-            width: 100%; margin-top: 8px; padding: 10px; border-radius: 10px;
-            border: 1px solid var(--border-light); background: var(--bubble-ai);
-            cursor: pointer; transition: all 0.2s ease; font-size: 13px;
-            font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 8px;
+        .chat-item:hover { background: var(--primary); color: white; }
+        .chat-item.active { background: var(--primary); color: white; }
+        .chat-item-title {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+        .pinned-chat { border-left: 3px solid var(--primary); }
+        .pin-icon { margin-right: 4px; font-size: 10px; }
+        
+        .chat-menu-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            color: inherit;
+            padding: 4px 8px;
+            border-radius: 8px;
+            opacity: 0.6;
+        }
+        .chat-item:hover .chat-menu-btn { opacity: 1; }
+        
+        .dropdown-menu {
+            position: fixed;
+            background: var(--bubble-ai);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            z-index: 1001;
+            min-width: 160px;
+            overflow: hidden;
+        }
+        .dropdown-item {
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            font-size: 13px;
             color: var(--text-dark);
         }
-        .delete-history-btn { border-color: #ef4444; color: #ef4444; }
+        .dropdown-item:hover { background: var(--hover-light); }
+        .dropdown-item.danger { color: #ef4444; }
+        
+        .delete-history-btn, .theme-toggle-btn, .voice-toggle-btn, .reset-name-btn {
+            width: 100%; margin-top: 8px; padding: 10px; border-radius: 10px;
+            border: 1px solid var(--border-light); background: var(--bubble-ai);
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            color: var(--text-dark);
+        }
+        .delete-history-btn { border-color: #ef4444; color: #ef4444; margin-top: 12px; }
         .delete-history-btn:hover { background: #ef4444; color: white; }
+        .reset-name-btn { border-color: var(--primary); color: var(--primary); }
+        .reset-name-btn:hover { background: var(--primary); color: white; }
         .voice-toggle-btn.voice-off { background: #ef4444; color: white; border-color: #ef4444; }
 
-     /* ========== CRITICAL MOBILE FIXES ========== */
-@media (max-width: 768px) { 
-    .right-sidebar { display: none; } 
-    .chat-container { 
-        margin-right: 0; 
-        padding: 16px 14px 12px 14px;
-        padding-bottom: 12px;
-    }
-    .header { padding: 10px 16px; }
-    .header-text { font-size: 18px; }
-    .logo { width: 36px; height: 36px; font-size: 16px; }
-    .new-chat-btn { padding: 5px 12px; font-size: 12px; }
-    .welcome-title { font-size: 26px; }
-    .welcome-subtitle { font-size: 13px; }
-    
-    /* Input container fix: ensure visibility & touch */
-    .input-container {
-        padding: 12px 12px 24px 12px;
-        background: transparent;
-        position: relative;
-        bottom: 0;
-        width: 100%;
-    }
-    .input-wrapper {
-        padding: 6px 10px 6px 18px;
-        border-radius: 50px;
-    }
-    .message-input {
-        font-size: 15px;
-        padding: 12px 6px;
-        min-height: 50px;
-    }
-    .icon-button {
-        width: 44px;
-        height: 44px;
-        font-size: 20px;
-    }
-    .message {
-        padding: 14px 18px;
-        font-size: 15px;
-        margin-bottom: 16px;
-    }
-    .user-message, .ai-message {
-        max-width: 90%;
-    }
-}
+        /* Login Modal */
+        .login-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(10px);
+            z-index: 3000; display: flex; align-items: center; justify-content: center;
+        }
+        .login-card {
+            background: var(--bubble-ai); border-radius: 32px; padding: 32px;
+            width: 350px; max-width: 90%; text-align: center;
+            border: 1px solid var(--border-light);
+        }
+        .login-card h2 { margin-bottom: 20px; color: var(--text-dark); }
+        .login-input {
+            width: 100%; padding: 12px; margin-bottom: 16px;
+            border: 1px solid var(--border-light); border-radius: 60px;
+            background: var(--bg-light); color: var(--text-dark);
+            outline: none;
+        }
+        .login-input:focus { border-color: var(--primary); }
+        .login-btn {
+            width: 100%; padding: 12px; background: var(--primary);
+            color: white; border: none; border-radius: 60px;
+            cursor: pointer; font-weight: 600;
+        }
+        .error-msg { color: #ef4444; margin-top: 12px; font-size: 13px; }
 
-/* Extra small devices (under 450px) */
-@media (max-width: 450px) {
-    .input-container {
-        padding: 10px 10px 24px 10px;
-    }
-    .input-wrapper {
-        padding: 5px 8px 5px 16px;
-    }
-    .message-input {
-        font-size: 15px;
-        min-height: 48px;
-        padding: 10px 6px;
-    }
-    .icon-button {
-        width: 42px;
-        height: 42px;
-        font-size: 19px;
-    }
-    .chat-container {
-        padding-bottom: 8px;
-    }
-    .message {
-        padding: 12px 16px;
-        margin-bottom: 14px;
-    }
-}
+        /* Admin Panel */
+        .admin-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(10px);
+            z-index: 2000; display: flex; align-items: center; justify-content: center;
+        }
+        .admin-panel {
+            background: var(--bubble-ai); border-radius: 28px; width: 90%; max-width: 750px;
+            max-height: 85vh; overflow-y: auto; padding: 24px;
+            border: 1px solid var(--border-light);
+        }
+        .admin-panel h2 { margin-bottom: 20px; }
+        .close-admin { float: right; background: transparent; border: none; font-size: 24px; cursor: pointer; color: var(--text-muted); }
+        .admin-tabs { display: flex; gap: 8px; border-bottom: 1px solid var(--border-light); margin-bottom: 20px; flex-wrap: wrap; }
+        .admin-tab { padding: 8px 16px; cursor: pointer; border-radius: 20px; font-size: 13px; color: var(--text-muted); }
+        .admin-tab.active { background: var(--primary); color: white; }
+        .admin-section { display: none; }
+        .admin-section.active { display: block; }
+        .admin-form-group { margin-bottom: 16px; }
+        .admin-form-group label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 13px; color: var(--text-dark); }
+        .admin-input, .admin-textarea, .admin-select {
+            width: 100%; padding: 10px 12px; border: 1px solid var(--border-light);
+            border-radius: 12px; background: var(--bg-light); color: var(--text-dark);
+            outline: none;
+        }
+        .admin-btn-submit { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 30px; cursor: pointer; font-weight: 600; margin-top: 8px; }
+        .data-list { margin-top: 20px; max-height: 280px; overflow-y: auto; }
+        .data-item { background: var(--hover-light); padding: 12px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .logout-btn { margin-top: 20px; background: #ef4444; color: white; border: none; padding: 10px; border-radius: 12px; cursor: pointer; width: 100%; }
 
-/* ensure safe area for modern iPhones */
-@supports (padding: max(0px)) {
-    .input-container {
-        padding-bottom: max(28px, env(safe-area-inset-bottom));
-    }
-    .chat-container {
-        padding-top: max(12px, env(safe-area-inset-top));
-        padding-bottom: max(12px, env(safe-area-inset-bottom));
-    }
-}
-
-.name-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.75);
-    backdrop-filter: blur(10px);
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    animation: fadeIn 0.3s ease;
-}
-.name-card {
-    background: var(--bubble-ai);
-    border-radius: 32px;
-    padding: 28px 24px;
-    max-width: 360px;
-    width: 85%;
-    text-align: center;
-    box-shadow: var(--shadow-lg);
-    border: 1px solid var(--border-light);
-}
-.name-card h2 {
-    font-size: 22px;
-    margin-bottom: 10px;
-    color: var(--text-dark);
-}
-.name-card p {
-    color: var(--text-muted);
-    margin-bottom: 20px;
-    font-size: 14px;
-}
-.name-input {
-    width: 100%;
-    padding: 12px 16px;
-    border: 1px solid var(--border-light);
-    border-radius: 60px;
-    font-size: 15px;
-    margin-bottom: 14px;
-    background: var(--bubble-ai);
-    color: var(--text-dark);
-    outline: none;
-}
-.name-input:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px var(--primary-glow);
-}
-.name-submit {
-    width: 100%;
-    padding: 12px;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-    color: white;
-    border: none;
-    border-radius: 60px;
-    font-weight: 600;
-    cursor: pointer;
-    font-size: 16px;
-}
-.skip-btn {
-    background: transparent;
-    border: none;
-    color: var(--text-muted);
-    margin-top: 12px;
-    cursor: pointer;
-    font-size: 13px;
-}
-
-.thinking {
-    display: inline-block;
-}
-.thinking::after {
-    content: "⚡";
-    animation: pulse 1s infinite;
-}
+        @media (min-width: 769px) { .menu-toggle { display: none; } .mobile-drawer, .drawer-overlay { display: none; } }
+        @media (max-width: 768px) { .right-sidebar { display: none; } .menu-toggle { display: flex; } .admin-header-btn span { display: none; } }
+        
+        .name-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.75); backdrop-filter: blur(10px);
+            z-index: 1000; display: flex; align-items: center; justify-content: center;
+        }
+        .name-card { background: var(--bubble-ai); border-radius: 32px; padding: 28px 24px; max-width: 360px; width: 85%; text-align: center; }
+        .name-input { width: 100%; padding: 12px; border-radius: 60px; border: 1px solid var(--border-light); background: var(--bg-light); color: var(--text-dark); margin-bottom: 12px; }
+        .thinking::after { content: "⚡"; animation: pulse 1s infinite; }
     </style>
 </head>
 <body>
     <div class="app-wrapper">
         <div class="header">
             <div class="header-left">
+                <button class="menu-toggle" id="menuToggleBtn"><i class="fas fa-bars"></i></button>
                 <div class="logo">A</div>
                 <div class="header-text" id="aiNameDisplay">Achariyan AI</div>
             </div>
-            <div class="new-chat-btn" id="newChatBtn">
-                <i class="fas fa-plus-circle"></i> New Chat
+            <div class="header-right">
+                <button class="admin-header-btn" id="adminHeaderBtn"><i class="fas fa-user-shield"></i> <span>Admin</span></button>
             </div>
         </div>
-
+        
         <div class="main-content">
             <div class="chat-container" id="chatContainer">
                 <div class="welcome-screen" id="welcomeScreen">
                     <div class="welcome-title" id="welcomeTitle">Hello! I'm Achariyan AI</div>
-                    <div class="welcome-subtitle" id="welcomeSubtitle">Your intelligent assistant for ACET information and general knowledge. Ask me anything!</div>
+                    <div class="welcome-subtitle">Your friendly ACET assistant. Ask me anything - I understand natural language! 😊</div>
                     <div class="suggested-prompts">
-                        <div class="prompt-bubble" data-prompt="CSE HOD">👩‍🏫 CSE HOD</div>
-                        <div class="prompt-bubble" data-prompt="CSE fees">💰 CSE Fees</div>
-                        <div class="prompt-bubble" data-prompt="CSE labs list">🔬 CSE Labs</div>
-                        <div class="prompt-bubble" data-prompt="ACET placements">💼 Placements</div>
-                        <div class="prompt-bubble" data-prompt="What is quantum computing?">⚛️ Quantum Computing</div>
-                        <div class="prompt-bubble" data-prompt="Tell me about cricket">🏏 Cricket</div>
-                        <div class="prompt-bubble" data-prompt="What is AI?">🤖 AI</div>
-                        <div class="prompt-bubble" data-prompt="Tell me a fun fact">🎉 Fun Fact</div>
-                        <div class="prompt-bubble" data-prompt="What is bus?">🚌 Bus</div>
+                        <div class="prompt-bubble" data-prompt="admission process">🎓 Admission Process</div>
+                        <div class="prompt-bubble" data-prompt="cse fees">💰 CSE Fees</div>
+                        <div class="prompt-bubble" data-prompt="wifi facility">📶 WiFi available?</div>
+                        <div class="prompt-bubble" data-prompt="cse hod">👨‍🏫 CSE HOD</div>
+                        <div class="prompt-bubble" data-prompt="tindivanam bus">🚌 Tindivanam Bus</div>
+                        <div class="prompt-bubble" data-prompt="college timings">⏰ Timings</div>
+                        <div class="prompt-bubble" data-prompt="placement details">💼 Placements</div>
+                        <div class="prompt-bubble" data-prompt="kannagi mam">🌸 Dr. Kannagi</div>
                     </div>
                 </div>
-                <div class="voice-indicator" id="voiceIndicator">
-                    <i class="fas fa-microphone voice-icon"></i>
-                    <span>Listening...</span>
-                </div>
+                <div class="voice-indicator" id="voiceIndicator"><i class="fas fa-microphone voice-icon"></i><span>Listening...</span></div>
             </div>
 
-            <div class="right-sidebar" id="rightSidebar">
-                <button class="admin-btn" id="adminBtn"><i class="fas fa-user-shield"></i> Admin Panel</button>
-                <div class="sidebar-section-title"><i class="fas fa-volume-up"></i> Preferences</div>
-                <button class="voice-toggle-btn" id="voiceToggleBtn">
-                    <i class="fas fa-volume-up"></i> Voice Response: ON
-                </button>
+            <div class="right-sidebar" id="desktopSidebar">
                 <div class="sidebar-section-title"><i class="fas fa-user"></i> Profile</div>
-                <button class="delete-history-btn" id="resetNameBtn" style="border-color: var(--primary); color: var(--primary);">
-                    <i class="fas fa-user-edit"></i> Change My Name
-                </button>
+                <button class="reset-name-btn" id="resetNameDesktop"><i class="fas fa-user-edit"></i> Change My Name</button>
+                <div class="sidebar-section-title"><i class="fas fa-plus-circle"></i> Conversation</div>
+                <button class="new-chat-sidebar-btn" id="newChatDesktop"><i class="fas fa-plus-circle"></i> New Chat</button>
                 <div class="sidebar-section-title"><i class="fas fa-history"></i> Chat History</div>
-                <div class="chat-history" id="chatHistory"></div>
-                <button class="delete-history-btn" id="deleteHistoryBtn"><i class="fas fa-trash"></i> Clear History</button>
-                <button class="theme-toggle-btn" id="themeToggle"><i class="fas fa-moon"></i> Dark Mode</button>
+                <div class="chat-history" id="chatHistoryDesktop"></div>
+                <div class="sidebar-section-title"><i class="fas fa-volume-up"></i> Preferences</div>
+                <button class="voice-toggle-btn" id="voiceToggleDesktop"><i class="fas fa-volume-up"></i> Voice: ON</button>
+                <button class="theme-toggle-btn" id="themeToggleDesktop"><i class="fas fa-moon"></i> Dark Mode</button>
+                <button class="delete-history-btn" id="deleteAllDesktop"><i class="fas fa-trash"></i> Clear All Chats</button>
+            </div>
+
+            <div class="drawer-overlay" id="drawerOverlay"></div>
+            <div class="mobile-drawer" id="mobileDrawer">
+                <div class="drawer-header">
+                    <h3><i class="fas fa-robot"></i> Achariyan AI</h3>
+                    <button class="close-drawer" id="closeDrawerBtn"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="sidebar-section-title"><i class="fas fa-user"></i> Profile</div>
+                <button class="reset-name-btn" id="resetNameMobile"><i class="fas fa-user-edit"></i> Change My Name</button>
+                <div class="sidebar-section-title"><i class="fas fa-plus-circle"></i> Conversation</div>
+                <button class="new-chat-sidebar-btn" id="newChatMobile"><i class="fas fa-plus-circle"></i> New Chat</button>
+                <div class="sidebar-section-title"><i class="fas fa-history"></i> Chat History</div>
+                <div class="chat-history" id="chatHistoryMobile"></div>
+                <div class="sidebar-section-title"><i class="fas fa-volume-up"></i> Preferences</div>
+                <button class="voice-toggle-btn" id="voiceToggleMobile"><i class="fas fa-volume-up"></i> Voice: ON</button>
+                <button class="theme-toggle-btn" id="themeToggleMobile"><i class="fas fa-moon"></i> Dark Mode</button>
+                <button class="delete-history-btn" id="deleteAllMobile"><i class="fas fa-trash"></i> Clear All Chats</button>
             </div>
         </div>
 
         <div class="input-container">
             <div class="input-wrapper">
-                <button class="icon-button" id="voiceButton" title="Voice Input"><i class="fas fa-microphone"></i></button>
-                <textarea class="message-input" id="messageInput" placeholder="Ask me anything about ACET or any general question..." rows="1"></textarea>
-                <button class="icon-button" id="sendButton" title="Send Message"><i class="fas fa-paper-plane"></i></button>
+                <button class="icon-button" id="voiceButton"><i class="fas fa-microphone"></i></button>
+                <textarea class="message-input" id="messageInput" placeholder="Ask me anything naturally..." rows="1"></textarea>
+                <button class="icon-button" id="sendButton"><i class="fas fa-paper-plane"></i></button>
             </div>
         </div>
     </div>
 
     <script>
         (function() {
-            const ACET = {
-                overview: { principal: "Dr. S. Gurulingam", principalContact: { mobile: "9442277107", email: "acethead@achariya.org" }, established: "2010", founder: "Dr. J. Arawindhan", location: "Achariyapuram, Villianur, Puducherry–605110", contact: { phone: "0413-2660164", tollFree: "1800-8901-969", email: "admission.acet@achariya.org" } },
-                departments: {
-                    cse: { name: "Computer Science & Engineering", hod: "Dr. A. Kannaki @ Vasantha Azhagu", hodQual: "Ph.D.", established: "2010", intake: 120, labs: 16, fees: "₹1,85,000 (total for 4 years)", labsList: ["1. DBMS Lab","2. Software Engineering Lab","3. Computer Networks Lab","4. Data Structures & C Lab","5. Microprocessor Lab","6. Visual Programming Lab","7. Compiler Design Lab","8. Cyber Security Lab","9. COA Lab","10. Programming for Problem Solving Lab","11. OS Lab","12. Java Programming Lab","13. DAA Lab","14. Web Technology Lab","15. IT Workshop Lab","16. Digital Electronics Lab"] },
-                    "ai & ds": { name: "Artificial Intelligence & Data Science", hod: "Mrs. S. Rajalakshmi", hodQual: "M.Tech (Ph.D)", established: "2020", intake: 60, labs: 8, fees: "₹2,00,000" },
-                    ece: { name: "Electronics & Communication Engineering", hod: "Prof. F. D. Anfnston", hodQual: "M.E., (Ph.D)", intake: 60, labs: 7, fees: "₹1,80,000" },
-                    eee: { name: "Electrical & Electronics Engineering", hod: "Prof. V. Anandakumar", hodQual: "M.E. (Power Systems)", intake: 60, labs: 10, fees: "₹1,75,000" },
-                    mech: { name: "Mechanical Engineering", hod: "Dr. G. Anand", hodQual: "Ph.D.", intake: 60, labs: 12, fees: "₹1,70,000" }
-                },
-                placements: { avgPackage: "2.75 LPA", highest: "12 LPA", recruiters: ["TCS", "Infosys", "Cognizant", "Amazon", "Zoho", "Hyundai", "L&T", "IBM"] },
-                transport: { buses: 25, vans: 47, routes: ["Puducherry", "Villupuram", "Tindivanam", "Cuddalore"], routeDetails: { cuddalore: { timings: "Morning 6:15 AM (Old Bus Stand), 6:30 AM (New Bus Stand). Return: 4:45 PM.", fee: "₹9,000 - ₹10,000 per semester" }, villupuram: { timings: "Morning 6:45 AM from Bus Stand. Return: 4:30 PM.", fee: "₹10,000 - ₹12,000 per semester" } } },
-                hostel: { capacity: 700, fee: "₹40,000 – ₹60,000 per semester", rooms: "AC and Non-AC available" },
-                library: { books: 16725, timings: "8:45 AM – 7:00 PM (weekdays)" },
-                fees: { btechRange: "₹1,70,000 – ₹2,20,000 for 4 years" }
-            };
-            const emotionalResponses = { kannagi: `Dr. A. Kannaki (Vasantha Azhagu), former Head of CSE, passed away on 16th February 2026. She was a dedicated educator known for her kindness. Her legacy continues to inspire. 🌸`, sethuraman: `Prof. Sethuraman, a beloved Mathematics professor, passed away on 18th January 2026. He was known for making complex concepts simple. 🙏` };
+            // ========== ADMIN CREDENTIALS ==========
+            const ADMIN_USERNAME = "admin";
+            const ADMIN_PASSWORD = "acet@2026";
+            let isAdminLoggedIn = false;
             
-            function getIntelligentResponse(question) {
-                const q = question.toLowerCase().trim();
-                if(q.includes('cricket')) return "🏏 Cricket: bat-and-ball game, popular in India. India won World Cup 1983, 2011 and T20 WC 2007,2024!";
-                if(q.includes('quantum computing')) return "💻 Quantum Computing uses qubits, superposition & entanglement. Solves problems exponentially faster. Google, IBM leading.";
-                if(q.includes('ai') && !q.includes('acet')) return "🤖 AI simulates human intelligence. Includes Machine Learning, GenAI like ChatGPT. Powers recommendations, self-driving.";
-                if(q.includes('bus')) return "🚌 Bus is public transport. ACET has 25 buses & 47 vans to nearby towns. Ask for Cuddalore/Villupuram timings!";
-                if(q.includes('fun fact')) return "✨ Fun Fact: Octopuses have three hearts and blue blood! 🐙";
-                if(q.includes('motivation')) return "💪 'Believe you can and you're halfway there.' – Theodore Roosevelt";
+            // ========== COLLEGE DATABASE ==========
+            let collegeDB = JSON.parse(localStorage.getItem('acetCollegeDB')) || {
+                admission: {
+                    process: "Admission to ACET is based on merit through TNEA (Tamil Nadu Engineering Admissions) counselling. Candidates must have passed 10+2 with Physics, Chemistry, and Mathematics with minimum 50% marks (45% for reserved categories).",
+                    contact: "📞 Admission Helpline: 1800-8901-969 (Toll Free) | 📱 0413-2660164",
+                    email: "admission.acet@achariya.org",
+                    website: "www.achariya.edu.in",
+                    documents: "Required documents: 10th & 12th mark sheets, Transfer Certificate, Community Certificate (if applicable), Migration Certificate, Passport size photos, Aadhar Card copy."
+                },
+                principal: { name: "Dr. S. Gurulingam", mobile: "9442277107", email: "acethead@achariya.org" },
+                founded: "2010",
+                location: "Achariyapuram, Villianur, Puducherry–605110",
+                collegeTimings: "Monday to Friday: 8:45 AM to 3:45 PM, Saturday: 8:45 AM to 12:45 PM, Sunday: Holiday",
+                wifi: "Yes! ACET has high-speed WiFi available throughout the campus for students and staff. You'll get login credentials from the IT department.",
+                canteen: "Yes, we have a spacious canteen serving hygienic South Indian, North Indian, and Chinese food at affordable prices.",
+                sports: "Yes! ACET has excellent sports facilities including cricket ground, football field, basketball court, volleyball court, indoor games like table tennis, chess, carrom, and a well-equipped gym.",
+                library: { books: "16,725+ books", journals: "100+ journals", timings: "8:45 AM – 7:00 PM (Weekdays)", digital: "IEEE, Springer, ScienceDirect" },
+                hostel: { capacity: "700 students", rooms: "AC/Non-AC (2/3/4 sharing)", fee: "₹40,000 – ₹60,000 per semester", mess: "Veg & Non-Veg available" },
+                departments: {
+                    cse: { name: "Computer Science & Engineering", hod: "Dr. A. Kannaki (Vasantha Azhagu)", hodQual: "Ph.D.", intake: "120", fees: "₹1,85,000 (4 years)", scope: "Software Dev, AI/ML, Cybersecurity, Cloud Computing", labs: "16 labs including DBMS, Networks, Cyber Security, AI Lab" },
+                    ai_ds: { name: "Artificial Intelligence & Data Science", hod: "Mrs. S. Rajalakshmi", hodQual: "M.Tech (Ph.D)", intake: "60", fees: "₹2,00,000 (4 years)", scope: "Data Scientist, AI Engineer, ML Expert", labs: "8 labs: AI, Data Analytics, Machine Learning, Deep Learning" },
+                    ece: { name: "Electronics & Communication Engineering", hod: "Prof. F. D. Anfnston", hodQual: "M.E., (Ph.D)", intake: "60", fees: "₹1,80,000 (4 years)", scope: "VLSI, Embedded, IoT, Robotics", labs: "7 labs: VLSI, Embedded, DSP, IoT" },
+                    eee: { name: "Electrical & Electronics Engineering", hod: "Prof. V. Anandakumar", hodQual: "M.E.", intake: "60", fees: "₹1,75,000 (4 years)", scope: "Power Sector, Renewable Energy", labs: "10 labs: Power Systems, Machines, Renewable Energy" },
+                    mech: { name: "Mechanical Engineering", hod: "Dr. G. Anand", hodQual: "Ph.D.", intake: "60", fees: "₹1,70,000 (4 years)", scope: "Automobile, Manufacturing, Design", labs: "12 labs: CAD/CAM, Thermal, Robotics, 3D Printing" },
+                    civil: { name: "Civil Engineering", hod: "Prof. R. Murugesan", hodQual: "M.E.", intake: "60", fees: "₹1,65,000 (4 years)", scope: "Construction, Infrastructure", labs: "8 labs: Surveying, Material Testing, Geotechnical" }
+                },
+                transport: {
+                    buses: "25 Buses", vans: "47 Vans", routes: "Puducherry, Villupuram, Tindivanam, Cuddalore",
+                    tindivanam: "Morning 6:45 AM from Tindivanam Bus Stand, Return 4:30 PM, Fee: ₹10,000/semester",
+                    cuddalore: "Morning 6:15 AM (Old Stand)/6:30 AM (New Stand), Return 4:45 PM, Fee: ₹9,000-10,000",
+                    villupuram: "Morning 6:45 AM from Bus Stand, Return 4:30 PM, Fee: ₹10,000-12,000",
+                    details: "GPS-enabled buses with female attendants"
+                },
+                placements: { avgPackage: "2.75 LPA", highest: "12 LPA", recruiters: "TCS, Infosys, Cognizant, Amazon, Zoho, Hyundai, L&T, IBM" },
+                events: [],
+                news: []
+            };
+            
+            function saveCollegeDB() { localStorage.setItem('acetCollegeDB', JSON.stringify(collegeDB)); }
+            
+            const tributes = {
+                kannagi: "🌸 Dr. A. Kannaki (Vasantha Azhagu) was the beloved former Head of CSE Department at ACET. She passed away on 16th February 2026. She was a dedicated educator known for her kindness, wisdom, and commitment to students. Her legacy continues to inspire the ACET family. May her soul rest in peace. 🙏"
+            };
+            
+            // ========== SIMPLIFIED QUESTION SPLITTING ==========
+            function splitQuestions(text) {
+                let cleanText = text.trim();
+                let parts = [];
+                
+                // Method 1: Split by question mark
+                if (cleanText.includes('?')) {
+                    parts = cleanText.split('?').map(p => p.trim()).filter(p => p.length > 0);
+                    return parts.filter(p => p.length > 2);
+                }
+                
+                // Method 2: Split by keywords
+                const lowerText = cleanText.toLowerCase();
+                const keywords = [' and ', ' also ', ' what about ', ' how about '];
+                for (const kw of keywords) {
+                    if (lowerText.includes(kw)) {
+                        parts = cleanText.split(new RegExp(kw, 'i')).map(p => p.trim()).filter(p => p.length > 0);
+                        break;
+                    }
+                }
+                
+                // Method 3: Split by multiple dots
+                if (parts.length <= 1 && cleanText.includes('....')) {
+                    parts = cleanText.split('....').map(p => p.trim()).filter(p => p.length > 0);
+                }
+                
+                // Method 4: If still single, return as is
+                if (parts.length === 0) {
+                    parts = [cleanText];
+                }
+                
+                return parts.filter(p => p.length > 2);
+            }
+            
+            // ========== SIMPLIFIED ANSWER FUNCTION ==========
+            function getAnswerForSingleQuestion(q, userName) {
+                const question = q.toLowerCase().trim();
+                const name = userName || "there";
+                
+                // ===== ADMISSION (HIGHEST PRIORITY) =====
+                if (question.includes('admission')) {
+                    return `🎓 **Admission Process at ACET**\n\n${collegeDB.admission.process}\n\n📞 ${collegeDB.admission.contact}\n✉️ Email: ${collegeDB.admission.email}\n🌐 Website: ${collegeDB.admission.website}\n\n📄 **Documents Required:**\n${collegeDB.admission.documents}`;
+                }
+                if (question.includes('document')) {
+                    return `📄 **Documents Required for Admission**\n${collegeDB.admission.documents}`;
+                }
+                if (question.includes('eligibility') || question.includes('qualification')) {
+                    return `✅ **Eligibility Criteria**\nCandidates must have passed 10+2 with Physics, Chemistry, and Mathematics with minimum 50% marks (45% for reserved categories). Admission through TNEA counselling.`;
+                }
+                if (question.includes('tnea') || question.includes('counselling')) {
+                    return `📋 **TNEA Counselling**\nACET admissions are through TNEA (Tamil Nadu Engineering Admissions) counselling. Visit www.tneaonline.org for registration and counselling schedule.`;
+                }
+                
+                // ===== PRINCIPAL =====
+                if (question.includes('principal') || question.includes('head of the college') || question.includes('head of college')) {
+                    return `👨‍🏫 **Principal**\n${collegeDB.principal.name}\n📞 ${collegeDB.principal.mobile}\n✉️ ${collegeDB.principal.email}`;
+                }
+                
+                // ===== RESTROOM =====
+                if (question.includes('restroom') || question.includes('toilet') || question.includes('hygiene')) {
+                    return `🚻 **Restroom & Hygiene Facilities**\nYes, the college maintains proper hygiene and cleanliness across the campus, including restrooms. Regular maintenance is done to ensure a comfortable environment for students.`;
+                }
+                
+                // ===== STUDENT KNOWLEDGE =====
+                if ((question.includes('improve') && question.includes('knowledge')) || question.includes('skill development') || question.includes('develop student')) {
+                    return `📚 **Student Knowledge Development**\nThe college improves student knowledge through practical labs, workshops, seminars, projects, and placement training programs.`;
+                }
+                
+                // ===== DISCIPLINE =====
+                if ((question.includes('break') && question.includes('rule')) || question.includes('misconduct') || question.includes('illegal') || question.includes('disciplinary') || question.includes('punishment')) {
+                    return `⚠️ **Disciplinary Action**\nThe college follows strict disciplinary rules. Any misconduct or illegal activity is handled seriously by the management. Actions may include warning, suspension, or further disciplinary measures depending on the severity.`;
+                }
+                
+                // ===== PLACEMENT =====
+                if (question.includes('placement')) {
+                    if (question.includes('highest')) {
+                        return `🏆 **Highest Package**\n${collegeDB.placements.highest}`;
+                    }
+                    if (question.includes('average') || question.includes('avg')) {
+                        return `📊 **Average Package**\n${collegeDB.placements.avgPackage}`;
+                    }
+                    return `💼 **Placements at ACET**\nAvg Package: ${collegeDB.placements.avgPackage}\nHighest: ${collegeDB.placements.highest}\nRecruiters: ${collegeDB.placements.recruiters}`;
+                }
+                
+                // ===== TIMINGS =====
+                if (question.includes('timing') || question.includes('college time') || question.includes('working hour')) {
+                    return `⏰ **College Timings**\n${collegeDB.collegeTimings}`;
+                }
+                
+                // ===== CSE =====
+                if ((question.includes('cse') || question.includes('computer science')) && question.includes('fee')) {
+                    return `💰 **CSE Fees**\n${collegeDB.departments.cse.fees}`;
+                }
+                if ((question.includes('cse') || question.includes('computer science')) && question.includes('hod')) {
+                    return `👨‍🏫 **CSE HOD**\n${collegeDB.departments.cse.hod} (${collegeDB.departments.cse.hodQual})`;
+                }
+                if (question.includes('cse') || question.includes('computer science')) {
+                    const d = collegeDB.departments.cse;
+                    return `📘 **CSE Department**\nHOD: ${d.hod}\nIntake: ${d.intake}\nFees: ${d.fees}\nLabs: ${d.labs}`;
+                }
+                
+                // ===== AI & DS =====
+                if ((question.includes('ai') || question.includes('artificial intelligence') || question.includes('data science')) && question.includes('fee')) {
+                    return `💰 **AI & DS Fees**\n${collegeDB.departments.ai_ds.fees}`;
+                }
+                if ((question.includes('ai') || question.includes('artificial intelligence') || question.includes('data science')) && question.includes('hod')) {
+                    return `👩‍🏫 **AI & DS HOD**\n${collegeDB.departments.ai_ds.hod} (${collegeDB.departments.ai_ds.hodQual})`;
+                }
+                
+                // ===== ECE =====
+                if (question.includes('ece') && question.includes('fee')) {
+                    return `💰 **ECE Fees**\n${collegeDB.departments.ece.fees}`;
+                }
+                if (question.includes('ece') && question.includes('hod')) {
+                    return `👨‍🏫 **ECE HOD**\n${collegeDB.departments.ece.hod} (${collegeDB.departments.ece.hodQual})`;
+                }
+                
+                // ===== EEE =====
+                if ((question.includes('eee') || question.includes('electrical')) && question.includes('fee')) {
+                    return `💰 **EEE Fees**\n${collegeDB.departments.eee.fees}`;
+                }
+                if ((question.includes('eee') || question.includes('electrical')) && question.includes('hod')) {
+                    return `👨‍🏫 **EEE HOD**\n${collegeDB.departments.eee.hod} (${collegeDB.departments.eee.hodQual})`;
+                }
+                
+                // ===== MECHANICAL =====
+                if ((question.includes('mech') || question.includes('mechanical')) && question.includes('fee')) {
+                    return `💰 **Mechanical Fees**\n${collegeDB.departments.mech.fees}`;
+                }
+                if ((question.includes('mech') || question.includes('mechanical')) && question.includes('hod')) {
+                    return `👨‍🏫 **Mechanical HOD**\n${collegeDB.departments.mech.hod} (${collegeDB.departments.mech.hodQual})`;
+                }
+                
+                // ===== CIVIL =====
+                if (question.includes('civil') && question.includes('fee')) {
+                    return `💰 **Civil Fees**\n${collegeDB.departments.civil.fees}`;
+                }
+                if (question.includes('civil') && question.includes('hod')) {
+                    return `👨‍🏫 **Civil HOD**\n${collegeDB.departments.civil.hod} (${collegeDB.departments.civil.hodQual})`;
+                }
+                
+                // ===== WIFI =====
+                if (question.includes('wifi') || question.includes('wi-fi') || question.includes('internet')) {
+                    return `📶 **WiFi Facility**\n${collegeDB.wifi}`;
+                }
+                
+                // ===== MEDICAL =====
+                if (question.includes('medical') || question.includes('health')) {
+                    if (question.includes('emergency')) {
+                        return `🚑 **Medical Emergency**\nIf a student faces a medical issue, the college will first ensure immediate care. Basic first aid is provided, and if needed, the student is taken to a nearby hospital. Parents are informed if required.`;
+                    }
+                    return `🏥 **Medical Facilities**\nThe college provides basic medical support for students. In case of serious health issues, students are assisted and taken to nearby hospitals.`;
+                }
+                
+                // ===== HOSTEL =====
+                if (question.includes('hostel')) {
+                    if (question.includes('fee')) {
+                        return `💰 **Hostel Fee**\n${collegeDB.hostel.fee}`;
+                    }
+                    return `🏠 **Hostel Facilities**\nCapacity: ${collegeDB.hostel.capacity}\nRooms: ${collegeDB.hostel.rooms}\nFee: ${collegeDB.hostel.fee}\nMess: ${collegeDB.hostel.mess}`;
+                }
+                
+                // ===== TRANSPORT =====
+                if (question.includes('tindivanam')) {
+                    return `🚌 **Tindivanam Route**\n${collegeDB.transport.tindivanam}`;
+                }
+                if (question.includes('cuddalore')) {
+                    return `🚌 **Cuddalore Route**\n${collegeDB.transport.cuddalore}`;
+                }
+                if (question.includes('villupuram')) {
+                    return `🚌 **Villupuram Route**\n${collegeDB.transport.villupuram}`;
+                }
+                if (question.includes('bus') || question.includes('transport')) {
+                    return `🚍 **Transport Facilities**\n${collegeDB.transport.buses}, ${collegeDB.transport.vans}\nRoutes: ${collegeDB.transport.routes}\n${collegeDB.transport.details}`;
+                }
+                
+                // ===== DEPARTMENTS LIST =====
+                if (question.includes('department') || question.includes('branches') || question.includes('courses offered')) {
+                    return `📌 **ACET Departments**\n• Computer Science & Engineering (CSE)\n• Artificial Intelligence & Data Science (AI&DS)\n• Electronics & Communication Engineering (ECE)\n• Electrical & Electronics Engineering (EEE)\n• Mechanical Engineering\n• Civil Engineering\n• Information Technology (IT)\n• Robotics and Automation`;
+                }
+                
+                // ===== LIBRARY =====
+                if (question.includes('library')) {
+                    return `📚 **Library**\n${collegeDB.library.books}, ${collegeDB.library.journals} journals\nTimings: ${collegeDB.library.timings}\nDigital: ${collegeDB.library.digital}`;
+                }
+                
+                // ===== SPORTS =====
+                if (question.includes('sport') || question.includes('gym')) {
+                    return `🏃 **Sports Facilities**\n${collegeDB.sports}`;
+                }
+                
+                // ===== CANTEEN =====
+                if (question.includes('canteen') || question.includes('food')) {
+                    return `🍽️ **Canteen**\n${collegeDB.canteen}`;
+                }
+                
+                // ===== ENVIRONMENT / SAFE =====
+                if (question.includes('safe') || question.includes('environment') || question.includes('atmosphere')) {
+                    return `🌳 **College Environment**\nACET provides a safe, disciplined, and student-friendly environment with focus on learning and development.`;
+                }
+                
+                // ===== ATTENDANCE =====
+                if (question.includes('attendance') || question.includes('absent')) {
+                    return `📋 **Attendance Policy**\nStudents are expected to maintain regular attendance. Minimum 75% required for exam eligibility. Low attendance may result in exam debarment.`;
+                }
+                
+                // ===== CLASS BEHAVIOR =====
+                if (question.includes('sleep') && question.includes('class')) {
+                    return `📢 **Classroom Discipline**\nStudents are expected to stay attentive in class. Faculty may warn or guide the student to maintain discipline and focus during lectures.`;
+                }
+                
+                // ===== EXTRACURRICULAR =====
+                if (question.includes('singing') || question.includes('dancing') || question.includes('cultural') || question.includes('extracurricular')) {
+                    return `🎤 **Extracurricular Activities**\nYes, ACET encourages cultural events, singing, dancing, sports, and student clubs to support overall development.`;
+                }
+                
+                // ===== STUDENT SUPPORT =====
+                if (question.includes('support') && question.includes('student')) {
+                    return `🤝 **Student Support**\nACET supports students through faculty guidance, mentoring, academic support, and training programs to improve skills and knowledge.`;
+                }
+                
+                // ===== CONTACT =====
+                if (question.includes('contact') || question.includes('phone') || question.includes('email')) {
+                    return `📞 **Contact Information**\nAdmission Helpline: 1800-8901-969 (Toll Free)\nCollege Phone: 0413-2660164\nPrincipal Email: ${collegeDB.principal.email}\nAdmission Email: ${collegeDB.admission.email}`;
+                }
+                
+                // ===== FEES GENERAL =====
+                if (question.includes('fee structure') || question.includes('total fee')) {
+                    return `💰 **Fee Structure**\nCSE: ${collegeDB.departments.cse.fees}\nAI&DS: ${collegeDB.departments.ai_ds.fees}\nECE: ${collegeDB.departments.ece.fees}\nEEE: ${collegeDB.departments.eee.fees}\nMech: ${collegeDB.departments.mech.fees}\nCivil: ${collegeDB.departments.civil.fees}`;
+                }
+                
+                // ===== ARTS & SCIENCE =====
+                if (question.includes('arts') && question.includes('science')) {
+                    return `🎓 **Arts & Science Programs**\nNo, ACET is an engineering college. It offers only B.Tech and technology-related courses, not arts and science programs.`;
+                }
+                
+                // ===== GOOD COLLEGE =====
+                if (question.includes('good college') || question.includes('why acet')) {
+                    return `🌟 **Why Choose ACET?**\n• 14+ years of academic excellence\n• NAAC & NBA accredited\n• Excellent placement record\n• Modern infrastructure & labs\n• Experienced faculty\n• Safe, ragging-free campus`;
+                }
+                
+                // ===== TRIBUTE =====
+                if (question.includes('kannagi')) {
+                    return tributes.kannagi;
+                }
+                
+                // ===== GREETINGS =====
+                if (question.match(/^(hi|hello|hey|hai)$/i)) {
+                    return `Hello ${name}! 👋 How can I help you today?`;
+                }
+                if (question.includes('how are you')) {
+                    return `I'm doing great, ${name}! 🤗 Thanks for asking! How can I help you?`;
+                }
+                if (question.includes('thank')) {
+                    return `You're most welcome, ${name}! 🎉 Anything else I can help with?`;
+                }
+                if (question.includes('bye')) {
+                    return `Goodbye, ${name}! 👋 Have a great day!`;
+                }
+                
+                // ===== FALLBACK =====
                 return null;
             }
             
+            // ========== MAIN RESPONSE FUNCTION ==========
+            function getSmartResponse(question, userName) {
+                const parts = splitQuestions(question);
+                
+                // Single question
+                if (parts.length === 1) {
+                    const answer = getAnswerForSingleQuestion(parts[0], userName);
+                    if (answer) return answer;
+                    return `Hmm, I'm not sure about that, ${userName || 'there'}. 😅 You can ask me about:\n• Admission process & documents\n• Department fees, HOD, labs\n• Placements & packages\n• Hostel, WiFi, Transport\n• College timings, Library, Sports\n• Medical, Discipline, Attendance\n\nJust ask naturally! 🎓`;
+                }
+                
+                // Multiple questions
+                const answers = [];
+                for (const part of parts) {
+                    const answer = getAnswerForSingleQuestion(part, userName);
+                    if (answer) {
+                        answers.push(answer);
+                    }
+                }
+                
+                if (answers.length === 0) {
+                    return `I couldn't find specific information, ${userName || 'there'}. 😅 Please try asking about admission, departments, facilities, or other college-related topics!`;
+                }
+                
+                return answers.join('\n\n' + '─'.repeat(30) + '\n\n');
+            }
+            
+            // ========== ADMIN PANEL ==========
+            function showAdminLogin() {
+                const modal = document.createElement('div'); modal.className = 'login-modal';
+                modal.innerHTML = `
+                    <div class="login-card">
+                        <h2><i class="fas fa-user-shield"></i> Admin Login</h2>
+                        <input type="text" id="loginUsername" class="login-input" placeholder="Username">
+                        <input type="password" id="loginPassword" class="login-input" placeholder="Password">
+                        <button id="loginBtn" class="login-btn">Login</button>
+                        <div id="loginError" class="error-msg"></div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                document.getElementById('loginBtn').onclick = () => {
+                    const user = document.getElementById('loginUsername').value;
+                    const pass = document.getElementById('loginPassword').value;
+                    if (user === ADMIN_USERNAME && pass === ADMIN_PASSWORD) {
+                        isAdminLoggedIn = true;
+                        localStorage.setItem('acetAdminLoggedIn', 'true');
+                        modal.remove();
+                        openAdminPanel();
+                    } else {
+                        document.getElementById('loginError').textContent = 'Invalid credentials!';
+                    }
+                };
+            }
+            
+            function openAdminPanel() {
+                if (!isAdminLoggedIn && localStorage.getItem('acetAdminLoggedIn') !== 'true') {
+                    showAdminLogin();
+                    return;
+                }
+                isAdminLoggedIn = true;
+                const modal = document.createElement('div'); modal.className = 'admin-modal';
+                modal.innerHTML = `
+                    <div class="admin-panel">
+                        <button class="close-admin" id="closeAdminBtn">&times;</button>
+                        <h2><i class="fas fa-user-shield"></i> Admin Control Panel</h2>
+                        <div class="admin-tabs">
+                            <div class="admin-tab active" data-tab="admission">🎓 Admission</div>
+                            <div class="admin-tab" data-tab="basic">🏫 Basic Info</div>
+                            <div class="admin-tab" data-tab="dept">📚 Departments</div>
+                            <div class="admin-tab" data-tab="placement">💼 Placements</div>
+                            <div class="admin-tab" data-tab="transport">🚍 Transport</div>
+                            <div class="admin-tab" data-tab="events">📅 Events</div>
+                            <div class="admin-tab" data-tab="news">📰 News</div>
+                        </div>
+                        
+                        <div id="admissionSec" class="admin-section active">
+                            <div class="admin-form-group"><label>Admission Process</label><textarea id="admissionProcess" class="admin-textarea" rows="4">${collegeDB.admission.process}</textarea></div>
+                            <div class="admin-form-group"><label>Contact Info</label><textarea id="admissionContact" class="admin-textarea" rows="2">${collegeDB.admission.contact}</textarea></div>
+                            <div class="admin-form-group"><label>Email</label><input id="admissionEmail" class="admin-input" value="${collegeDB.admission.email}"></div>
+                            <div class="admin-form-group"><label>Website</label><input id="admissionWebsite" class="admin-input" value="${collegeDB.admission.website}"></div>
+                            <div class="admin-form-group"><label>Documents Required</label><textarea id="admissionDocs" class="admin-textarea" rows="4">${collegeDB.admission.documents}</textarea></div>
+                            <button id="updateAdmissionBtn" class="admin-btn-submit">Update Admission Info</button>
+                        </div>
+                        
+                        <div id="basicSec" class="admin-section">
+                            <div class="admin-form-group"><label>Principal Name</label><input id="principalName" class="admin-input" value="${escapeHtml(collegeDB.principal.name)}"></div>
+                            <div class="admin-form-group"><label>Principal Mobile</label><input id="principalMobile" class="admin-input" value="${collegeDB.principal.mobile}"></div>
+                            <div class="admin-form-group"><label>Principal Email</label><input id="principalEmail" class="admin-input" value="${collegeDB.principal.email}"></div>
+                            <div class="admin-form-group"><label>College Timings</label><textarea id="collegeTimings" class="admin-textarea">${collegeDB.collegeTimings}</textarea></div>
+                            <div class="admin-form-group"><label>WiFi Info</label><textarea id="wifiInfo" class="admin-textarea">${collegeDB.wifi}</textarea></div>
+                            <div class="admin-form-group"><label>Canteen Info</label><textarea id="canteenInfo" class="admin-textarea">${collegeDB.canteen}</textarea></div>
+                            <div class="admin-form-group"><label>Sports Info</label><textarea id="sportsInfo" class="admin-textarea">${collegeDB.sports}</textarea></div>
+                            <button id="updateBasicBtn" class="admin-btn-submit">Update Basic Info</button>
+                        </div>
+                        
+                        <div id="deptSec" class="admin-section">
+                            <div class="admin-form-group"><label>Select Department</label><select id="deptSelect" class="admin-select">
+                                <option value="cse">CSE</option><option value="ai_ds">AI & DS</option><option value="ece">ECE</option>
+                                <option value="eee">EEE</option><option value="mech">Mechanical</option><option value="civil">Civil</option>
+                            </select></div>
+                            <div class="admin-form-group"><label>Department Name</label><input id="deptName" class="admin-input"></div>
+                            <div class="admin-form-group"><label>HOD Name</label><input id="deptHod" class="admin-input"></div>
+                            <div class="admin-form-group"><label>HOD Qualification</label><input id="deptQual" class="admin-input"></div>
+                            <div class="admin-form-group"><label>Intake</label><input id="deptIntake" class="admin-input"></div>
+                            <div class="admin-form-group"><label>Fees</label><input id="deptFees" class="admin-input"></div>
+                            <div class="admin-form-group"><label>Career Scope</label><textarea id="deptScope" class="admin-textarea"></textarea></div>
+                            <div class="admin-form-group"><label>Labs Info</label><textarea id="deptLabs" class="admin-textarea"></textarea></div>
+                            <button id="updateDeptBtn" class="admin-btn-submit">Update Department</button>
+                        </div>
+                        
+                        <div id="placementSec" class="admin-section">
+                            <div class="admin-form-group"><label>Average Package</label><input id="avgPackage" class="admin-input" value="${collegeDB.placements.avgPackage}"></div>
+                            <div class="admin-form-group"><label>Highest Package</label><input id="highestPackage" class="admin-input" value="${collegeDB.placements.highest}"></div>
+                            <div class="admin-form-group"><label>Recruiters (comma separated)</label><input id="recruiters" class="admin-input" value="${collegeDB.placements.recruiters}"></div>
+                            <button id="updatePlacementBtn" class="admin-btn-submit">Update Placements</button>
+                        </div>
+                        
+                        <div id="transportSec" class="admin-section">
+                            <div class="admin-form-group"><label>Buses & Vans</label><input id="buses" class="admin-input" value="${collegeDB.transport.buses}"></div>
+                            <div class="admin-form-group"><label>Routes</label><input id="routes" class="admin-input" value="${collegeDB.transport.routes}"></div>
+                            <div class="admin-form-group"><label>Tindivanam Route</label><textarea id="tindivanam" class="admin-textarea">${collegeDB.transport.tindivanam}</textarea></div>
+                            <div class="admin-form-group"><label>Cuddalore Route</label><textarea id="cuddalore" class="admin-textarea">${collegeDB.transport.cuddalore}</textarea></div>
+                            <div class="admin-form-group"><label>Villupuram Route</label><textarea id="villupuram" class="admin-textarea">${collegeDB.transport.villupuram}</textarea></div>
+                            <button id="updateTransportBtn" class="admin-btn-submit">Update Transport</button>
+                        </div>
+                        
+                        <div id="eventsSec" class="admin-section">
+                            <div class="admin-form-group"><label>Event Title</label><input id="evTitle" class="admin-input"></div>
+                            <div class="admin-form-group"><label>Date</label><input id="evDate" class="admin-input"></div>
+                            <div class="admin-form-group"><label>Description</label><textarea id="evDesc" class="admin-textarea"></textarea></div>
+                            <button id="addEventBtn" class="admin-btn-submit">+ Add Event</button>
+                            <div id="eventsList" class="data-list"></div>
+                        </div>
+                        
+                        <div id="newsSec" class="admin-section">
+                            <div class="admin-form-group"><label>News Title</label><input id="newsTitle" class="admin-input"></div>
+                            <div class="admin-form-group"><label>Date</label><input id="newsDate" class="admin-input"></div>
+                            <div class="admin-form-group"><label>Content</label><textarea id="newsContent" class="admin-textarea"></textarea></div>
+                            <button id="addNewsBtn" class="admin-btn-submit">+ Add News</button>
+                            <div id="newsList" class="data-list"></div>
+                        </div>
+                        
+                        <button id="logoutAdminBtn" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                
+                modal.querySelector('#updateAdmissionBtn').onclick = () => {
+                    collegeDB.admission.process = modal.querySelector('#admissionProcess').value;
+                    collegeDB.admission.contact = modal.querySelector('#admissionContact').value;
+                    collegeDB.admission.email = modal.querySelector('#admissionEmail').value;
+                    collegeDB.admission.website = modal.querySelector('#admissionWebsite').value;
+                    collegeDB.admission.documents = modal.querySelector('#admissionDocs').value;
+                    saveCollegeDB();
+                    alert('Admission info updated!');
+                };
+                
+                modal.querySelector('#updateBasicBtn').onclick = () => {
+                    collegeDB.principal.name = modal.querySelector('#principalName').value;
+                    collegeDB.principal.mobile = modal.querySelector('#principalMobile').value;
+                    collegeDB.principal.email = modal.querySelector('#principalEmail').value;
+                    collegeDB.collegeTimings = modal.querySelector('#collegeTimings').value;
+                    collegeDB.wifi = modal.querySelector('#wifiInfo').value;
+                    collegeDB.canteen = modal.querySelector('#canteenInfo').value;
+                    collegeDB.sports = modal.querySelector('#sportsInfo').value;
+                    saveCollegeDB();
+                    alert('Basic info updated!');
+                };
+                
+                const deptSelect = modal.querySelector('#deptSelect');
+                function loadDeptData() {
+                    const dept = deptSelect.value;
+                    const data = collegeDB.departments[dept];
+                    modal.querySelector('#deptName').value = data.name;
+                    modal.querySelector('#deptHod').value = data.hod;
+                    modal.querySelector('#deptQual').value = data.hodQual || '';
+                    modal.querySelector('#deptIntake').value = data.intake;
+                    modal.querySelector('#deptFees').value = data.fees;
+                    modal.querySelector('#deptScope').value = data.scope;
+                    modal.querySelector('#deptLabs').value = data.labs;
+                }
+                deptSelect.onchange = loadDeptData;
+                loadDeptData();
+                
+                modal.querySelector('#updateDeptBtn').onclick = () => {
+                    const dept = deptSelect.value;
+                    collegeDB.departments[dept] = {
+                        name: modal.querySelector('#deptName').value,
+                        hod: modal.querySelector('#deptHod').value,
+                        hodQual: modal.querySelector('#deptQual').value,
+                        intake: modal.querySelector('#deptIntake').value,
+                        fees: modal.querySelector('#deptFees').value,
+                        scope: modal.querySelector('#deptScope').value,
+                        labs: modal.querySelector('#deptLabs').value
+                    };
+                    saveCollegeDB();
+                    alert('Department updated!');
+                };
+                
+                modal.querySelector('#updatePlacementBtn').onclick = () => {
+                    collegeDB.placements.avgPackage = modal.querySelector('#avgPackage').value;
+                    collegeDB.placements.highest = modal.querySelector('#highestPackage').value;
+                    collegeDB.placements.recruiters = modal.querySelector('#recruiters').value;
+                    saveCollegeDB();
+                    alert('Placements updated!');
+                };
+                
+                modal.querySelector('#updateTransportBtn').onclick = () => {
+                    collegeDB.transport.buses = modal.querySelector('#buses').value;
+                    collegeDB.transport.routes = modal.querySelector('#routes').value;
+                    collegeDB.transport.tindivanam = modal.querySelector('#tindivanam').value;
+                    collegeDB.transport.cuddalore = modal.querySelector('#cuddalore').value;
+                    collegeDB.transport.villupuram = modal.querySelector('#villupuram').value;
+                    saveCollegeDB();
+                    alert('Transport updated!');
+                };
+                
+                function renderEvents() {
+                    const cont = modal.querySelector('#eventsList');
+                    cont.innerHTML = collegeDB.events.map((e, i) => `<div class="data-item"><div><b>${escapeHtml(e.title)}</b> (${escapeHtml(e.date)})<br><small>${escapeHtml(e.desc)}</small></div><button onclick="window._delEvent(${i})"><i class="fas fa-trash"></i></button></div>`).join('');
+                }
+                window._delEvent = (i) => { collegeDB.events.splice(i, 1); saveCollegeDB(); renderEvents(); };
+                modal.querySelector('#addEventBtn').onclick = () => {
+                    const t = modal.querySelector('#evTitle').value, d = modal.querySelector('#evDate').value, desc = modal.querySelector('#evDesc').value;
+                    if (t && d && desc) { collegeDB.events.unshift({ title: t, date: d, desc }); saveCollegeDB(); renderEvents(); modal.querySelector('#evTitle').value = ''; modal.querySelector('#evDate').value = ''; modal.querySelector('#evDesc').value = ''; }
+                    else alert('Fill all fields');
+                };
+                
+                function renderNews() {
+                    const cont = modal.querySelector('#newsList');
+                    cont.innerHTML = collegeDB.news.map((n, i) => `<div class="data-item"><div><b>${escapeHtml(n.title)}</b> (${escapeHtml(n.date)})<br><small>${escapeHtml(n.content)}</small></div><button onclick="window._delNews(${i})"><i class="fas fa-trash"></i></button></div>`).join('');
+                }
+                window._delNews = (i) => { collegeDB.news.splice(i, 1); saveCollegeDB(); renderNews(); };
+                modal.querySelector('#addNewsBtn').onclick = () => {
+                    const t = modal.querySelector('#newsTitle').value, d = modal.querySelector('#newsDate').value, c = modal.querySelector('#newsContent').value;
+                    if (t && d && c) { collegeDB.news.unshift({ title: t, date: d, content: c }); saveCollegeDB(); renderNews(); modal.querySelector('#newsTitle').value = ''; modal.querySelector('#newsDate').value = ''; modal.querySelector('#newsContent').value = ''; }
+                    else alert('Fill all fields');
+                };
+                
+                const tabs = modal.querySelectorAll('.admin-tab');
+                const sections = ['admissionSec', 'basicSec', 'deptSec', 'placementSec', 'transportSec', 'eventsSec', 'newsSec'];
+                tabs.forEach((tab, idx) => {
+                    tab.onclick = () => {
+                        tabs.forEach(t => t.classList.remove('active'));
+                        tab.classList.add('active');
+                        sections.forEach((s, i) => document.getElementById(s).classList.toggle('active', i === idx));
+                    };
+                });
+                
+                modal.querySelector('#logoutAdminBtn').onclick = () => {
+                    isAdminLoggedIn = false;
+                    localStorage.removeItem('acetAdminLoggedIn');
+                    modal.remove();
+                    alert('Logged out successfully!');
+                };
+                modal.querySelector('#closeAdminBtn').onclick = () => modal.remove();
+                renderEvents(); renderNews();
+            }
+            
+            function escapeHtml(str) { return String(str).replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); }
+            
+            // ========== SESSION MANAGEMENT ==========
             let userName = localStorage.getItem('acetUserName') || null;
             let aiName = localStorage.getItem('acetAiName') || 'Achariyan AI';
             let voiceResponseEnabled = localStorage.getItem('voiceResponseEnabled') !== 'false';
-            let chatHistory = JSON.parse(localStorage.getItem('acetHistory')) || [];
             let isDark = localStorage.getItem('acetDark') === 'true';
+            let sessions = JSON.parse(localStorage.getItem('acetSessions')) || [];
+            let currentSessionId = localStorage.getItem('acetCurrentSessionId') || null;
+            
+            function generateId() { return Date.now() + '-' + Math.random().toString(36).substr(2, 8); }
+            function persistSessions() { localStorage.setItem('acetSessions', JSON.stringify(sessions)); }
+            function persistCurrent() { if(currentSessionId) localStorage.setItem('acetCurrentSessionId', currentSessionId); }
+            
+            function createNewSession() {
+                const newSession = { id: generateId(), title: 'New Chat', messages: [], pinned: false, createdAt: new Date().toISOString() };
+                sessions.unshift(newSession);
+                currentSessionId = newSession.id;
+                persistSessions(); persistCurrent();
+                renderAllHistories();
+                return newSession;
+            }
+            
+            function loadSession(sessionId) {
+                const session = sessions.find(s => s.id === sessionId);
+                if (!session) return false;
+                currentSessionId = sessionId;
+                persistCurrent();
+                clearMessages();
+                if (session.messages.length === 0) showWelcome();
+                else { hideWelcome(); session.messages.forEach(msg => addMsgToDOM(msg.text, msg.sender, false)); }
+                renderAllHistories();
+                return true;
+            }
+            
+            function deleteSession(sessionId) {
+                sessions = sessions.filter(s => s.id !== sessionId);
+                persistSessions();
+                if (currentSessionId === sessionId) {
+                    if (sessions.length > 0) loadSession(sessions[0].id);
+                    else { createNewSession(); clearMessages(); showWelcome(); }
+                }
+                renderAllHistories();
+            }
+            
+            function addToSession(text, sender) {
+                let session = sessions.find(s => s.id === currentSessionId);
+                if (!session) session = createNewSession();
+                session.messages.push({ text, sender, timestamp: new Date().toISOString() });
+                if (sender === 'user' && session.title === 'New Chat') session.title = text.slice(0, 25) + (text.length > 25 ? '...' : '');
+                persistSessions();
+                renderAllHistories();
+            }
+            
             const chatContainer = document.getElementById('chatContainer');
-            const welcomeScreen = document.getElementById('welcomeScreen');
-            const welcomeTitle = document.getElementById('welcomeTitle');
-            const aiNameDisplay = document.getElementById('aiNameDisplay');
-            const messageInput = document.getElementById('messageInput');
-            const sendButton = document.getElementById('sendButton');
-            const voiceButton = document.getElementById('voiceButton');
-            const voiceIndicator = document.getElementById('voiceIndicator');
-            const chatHistoryDiv = document.getElementById('chatHistory');
-            const deleteBtn = document.getElementById('deleteHistoryBtn');
-            const resetNameBtn = document.getElementById('resetNameBtn');
-            const themeToggle = document.getElementById('themeToggle');
-            const adminBtn = document.getElementById('adminBtn');
-            const newChatBtn = document.getElementById('newChatBtn');
-            const voiceToggleBtn = document.getElementById('voiceToggleBtn');
-
-            function scrollToBottom() { chatContainer.scrollTop = chatContainer.scrollHeight; }
-            function updateNameDisplay() { aiNameDisplay.textContent = aiName; welcomeTitle.textContent = userName ? `Hello, ${userName}! I'm ${aiName}` : `Hello! I'm ${aiName}`; }
-            function speakResponse(text) { if(voiceResponseEnabled && window.speechSynthesis) { if(window.speechSynthesis.speaking) window.speechSynthesis.cancel(); const utterance = new SpeechSynthesisUtterance(text); utterance.rate = 0.9; window.speechSynthesis.speak(utterance); } }
-            function addMessage(text, sender, animate = true) { const msgDiv = document.createElement('div'); msgDiv.classList.add('message', sender === 'user' ? 'user-message' : 'ai-message'); msgDiv.textContent = text; if (animate) msgDiv.style.animation = 'fadeIn 0.3s ease'; chatContainer.appendChild(msgDiv); scrollToBottom(); }
+            const welcomeDiv = document.getElementById('welcomeScreen');
+            function clearMessages() { document.querySelectorAll('.message').forEach(m => m.remove()); }
+            function showWelcome() { welcomeDiv.style.display = 'block'; }
+            function hideWelcome() { welcomeDiv.style.display = 'none'; }
             
-            function renderHistory() {
-                chatHistoryDiv.innerHTML = '';
-                if(chatHistory.length === 0) { chatHistoryDiv.innerHTML = '<div class="chat-item" style="cursor:default;">✨ No history</div>'; return; }
-                [...chatHistory].reverse().forEach((item) => { const div = document.createElement('div'); div.className = 'chat-item'; div.textContent = item.q.length > 35 ? item.q.substr(0,35)+'…' : item.q; div.addEventListener('click', () => { resetToWelcomeScreen(); item.messages.forEach(m => addMessage(m.text, m.sender, false)); welcomeScreen.style.display = 'none'; }); chatHistoryDiv.appendChild(div); });
+            function addMsgToDOM(text, sender, animate = true) {
+                hideWelcome();
+                const msg = document.createElement('div');
+                msg.className = `message ${sender === 'user' ? 'user-message' : 'ai-message'}`;
+                msg.textContent = text;
+                const share = document.createElement('button');
+                share.className = 'message-share-btn';
+                share.innerHTML = '<i class="fas fa-share-alt"></i> Share';
+                share.onclick = () => { navigator.clipboard.writeText(text); alert('Copied!'); };
+                msg.appendChild(share);
+                chatContainer.appendChild(msg);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
             }
-            function saveHistory(userQ, aiA) {
-                const messages = Array.from(document.querySelectorAll('.message')).map(m => ({ text: m.textContent, sender: m.classList.contains('user-message') ? 'user' : 'ai' }));
-                chatHistory.push({ q: userQ, a: aiA, messages: messages });
-                if(chatHistory.length > 30) chatHistory.shift();
-                localStorage.setItem('acetHistory', JSON.stringify(chatHistory));
-                renderHistory();
-            }
-            function resetToWelcomeScreen() { document.querySelectorAll('.message').forEach(m => m.remove()); welcomeScreen.style.display = 'block'; if(window.speechSynthesis) window.speechSynthesis.cancel(); messageInput.value = ''; messageInput.style.height = 'auto'; }
             
-            function getLocalACETResponse(q) {
-                const text = q.toLowerCase().trim();
-                if(text === 'hi' || text === 'hello') return `Hey${userName ? ' ' + userName : ''}! 👋 How can I help?`;
-                if(text.includes('kannagi')) return emotionalResponses.kannagi;
-                if(text.includes('sethuraman')) return emotionalResponses.sethuraman;
-                if(text.includes('cse fees')) return `💰 CSE fees: ${ACET.departments.cse.fees}`;
-                if(text.includes('cse labs list')) return `🔬 CSE Labs (16 labs):\n${ACET.departments.cse.labsList.join('\n')}`;
-                if((text.includes('hod') || text.includes('head')) && text.includes('cse')) return `👩‍🏫 CSE HOD: ${ACET.departments.cse.hod} (${ACET.departments.cse.hodQual})`;
-                if(text.includes('transport') || (text.includes('bus') && text.includes('facility'))) return `🚍 ACET transport: ${ACET.transport.buses} buses, ${ACET.transport.vans} vans. Routes: ${ACET.transport.routes.join(', ')}. Ask about Cuddalore/Villupuram details.`;
-                if(text.includes('cuddalore')) return `🚌 Cuddalore: ${ACET.transport.routeDetails.cuddalore.timings} | Fee: ${ACET.transport.routeDetails.cuddalore.fee}`;
-                if(text.includes('villupuram')) return `🚌 Villupuram: ${ACET.transport.routeDetails.villupuram.timings} | Fee: ${ACET.transport.routeDetails.villupuram.fee}`;
-                if(text.includes('principal')) return `👨‍🏫 Principal: ${ACET.overview.principal} | 📞 ${ACET.overview.principalContact.mobile}`;
-                if(text.includes('placement')) return `💼 Placements: Avg ${ACET.placements.avgPackage}, Highest ${ACET.placements.highest}. Recruiters: ${ACET.placements.recruiters.join(', ')}`;
-                if(text.includes('hostel')) return `🏨 Hostel: ${ACET.hostel.capacity} capacity, ${ACET.hostel.rooms}, Fee: ${ACET.hostel.fee}`;
-                if(text.includes('library')) return `📚 Library: ${ACET.library.books} books, Timings: ${ACET.library.timings}`;
-                return null;
+            function renderHistory(containerId) {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+                container.innerHTML = '';
+                if (sessions.length === 0) { container.innerHTML = '<div style="padding: 10px; text-align: center; color: var(--text-muted);">✨ No chats</div>'; return; }
+                const sorted = [...sessions].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || new Date(b.createdAt) - new Date(a.createdAt));
+                sorted.forEach(session => {
+                    const div = document.createElement('div'); div.className = 'chat-item';
+                    if (session.pinned) div.classList.add('pinned-chat');
+                    if (currentSessionId === session.id) div.classList.add('active');
+                    const title = document.createElement('div'); title.className = 'chat-item-title';
+                    title.innerHTML = session.pinned ? `<i class="fas fa-thumbtack pin-icon"></i> ${escapeHtml(session.title)}` : escapeHtml(session.title);
+                    title.onclick = () => loadSession(session.id);
+                    const menu = document.createElement('button'); menu.className = 'chat-menu-btn'; menu.innerHTML = '<i class="fas fa-ellipsis-v"></i>';
+                    menu.onclick = (e) => { e.stopPropagation(); showMenu(session, menu); };
+                    div.appendChild(title); div.appendChild(menu);
+                    container.appendChild(div);
+                });
+            }
+            
+            function renderAllHistories() { renderHistory('chatHistoryDesktop'); renderHistory('chatHistoryMobile'); }
+            
+            function showMenu(session, anchor) {
+                document.querySelectorAll('.dropdown-menu').forEach(m => m.remove());
+                const rect = anchor.getBoundingClientRect();
+                const menu = document.createElement('div'); menu.className = 'dropdown-menu';
+                menu.style.top = rect.bottom + 5 + 'px'; menu.style.right = (window.innerWidth - rect.right) + 'px';
+                const items = [
+                    { icon: 'fas fa-share-alt', text: 'Share', action: () => { const txt = session.messages.map(m => `${m.sender === 'user' ? '👤' : '🤖'}: ${m.text}`).join('\n\n'); navigator.clipboard.writeText(txt); alert('Copied!'); } },
+                    { icon: session.pinned ? 'fas fa-thumbtack' : 'far fa-thumbtack', text: session.pinned ? 'Unpin' : 'Pin', action: () => { session.pinned = !session.pinned; persistSessions(); renderAllHistories(); } },
+                    { icon: 'fas fa-pen', text: 'Rename', action: () => { const newName = prompt('New name:', session.title); if (newName?.trim()) { session.title = newName.trim(); persistSessions(); renderAllHistories(); } } },
+                    { icon: 'fas fa-trash-alt', text: 'Delete', action: () => { if (confirm('Delete this chat?')) deleteSession(session.id); }, danger: true }
+                ];
+                items.forEach(item => {
+                    const opt = document.createElement('div'); opt.className = 'dropdown-item'; if (item.danger) opt.classList.add('danger');
+                    opt.innerHTML = `<i class="${item.icon}"></i><span>${item.text}</span>`;
+                    opt.onclick = () => { item.action(); menu.remove(); };
+                    menu.appendChild(opt);
+                });
+                document.body.appendChild(menu);
+                setTimeout(() => document.addEventListener('click', function rem(e) { if (!menu.contains(e.target)) { menu.remove(); document.removeEventListener('click', rem); } }), 10);
             }
             
             async function sendMessage() {
-                const q = messageInput.value.trim();
-                if(!q) return;
-                welcomeScreen.style.display = 'none';
-                addMessage(q, 'user');
-                messageInput.value = '';
-                messageInput.style.height = 'auto';
-                const loadingDiv = document.createElement('div');
-                loadingDiv.classList.add('message', 'ai-message');
-                loadingDiv.innerHTML = '<span class="thinking">Thinking</span>';
-                chatContainer.appendChild(loadingDiv);
-                scrollToBottom();
-                let finalAnswer = "";
-                const localAnswer = getLocalACETResponse(q);
-                if(localAnswer) finalAnswer = localAnswer;
-                else {
-                    const intelligent = getIntelligentResponse(q);
-                    if(intelligent) finalAnswer = intelligent;
-                    else finalAnswer = "🌟 I'm your ACET assistant! Ask about: CSE HOD, fees, placements, labs, transport, quantum computing, AI, cricket, fun facts, or any general topic!";
-                }
-                loadingDiv.remove();
-                addMessage(finalAnswer, 'ai');
-                saveHistory(q, finalAnswer);
-                speakResponse(finalAnswer);
+                const input = document.getElementById('messageInput');
+                const q = input.value.trim();
+                if (!q) return;
+                addMsgToDOM(q, 'user'); addToSession(q, 'user');
+                input.value = '';
+                const loading = document.createElement('div'); loading.className = 'message ai-message'; loading.innerHTML = '<span class="thinking">Thinking</span>';
+                chatContainer.appendChild(loading); chatContainer.scrollTop = chatContainer.scrollHeight;
+                const answer = getSmartResponse(q, userName);
+                loading.remove();
+                addMsgToDOM(answer, 'ai'); addToSession(answer, 'ai');
+                if (voiceResponseEnabled) { const utter = new SpeechSynthesisUtterance(answer); utter.rate = 0.9; window.speechSynthesis.speak(utter); }
             }
             
-            sendButton.addEventListener('click', sendMessage);
-            messageInput.addEventListener('keydown', (e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
-            messageInput.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 120) + 'px'; });
-            document.querySelectorAll('.prompt-bubble').forEach(b => { b.addEventListener('click', () => { messageInput.value = b.getAttribute('data-prompt'); sendMessage(); }); });
-            newChatBtn.addEventListener('click', resetToWelcomeScreen);
-            resetNameBtn.addEventListener('click', () => { userName = null; aiName = 'Achariyan AI'; localStorage.removeItem('acetUserName'); localStorage.setItem('acetAiName', aiName); updateNameDisplay(); showNameCollection(); });
-            deleteBtn.addEventListener('click', () => { if(confirm('Delete all history?')) { localStorage.removeItem('acetHistory'); chatHistory = []; renderHistory(); resetToWelcomeScreen(); } });
-            themeToggle.addEventListener('click', () => { document.body.classList.toggle('dark'); isDark = !isDark; localStorage.setItem('acetDark', isDark); themeToggle.innerHTML = isDark ? '<i class="fas fa-sun"></i> Light Mode' : '<i class="fas fa-moon"></i> Dark Mode'; });
-            adminBtn.addEventListener('click', () => { alert('Achariyan AI - College Assistant\n✅ ACET info (fees/HODs/placements/labs/transport)\n✅ General knowledge (AI, quantum, cricket, fun facts)\n✅ Voice support & history'); });
+            function newChat() { createNewSession(); clearMessages(); showWelcome(); closeDrawer(); }
+            function closeDrawer() { document.getElementById('mobileDrawer')?.classList.remove('open'); document.getElementById('drawerOverlay')?.classList.remove('open'); }
             
-            function updateVoiceToggleUI() { if(voiceResponseEnabled) { voiceToggleBtn.innerHTML = '<i class="fas fa-volume-up"></i> Voice Response: ON'; voiceToggleBtn.classList.remove('voice-off'); } else { voiceToggleBtn.innerHTML = '<i class="fas fa-volume-mute"></i> Voice Response: OFF'; voiceToggleBtn.classList.add('voice-off'); } }
-            voiceToggleBtn.addEventListener('click', () => { voiceResponseEnabled = !voiceResponseEnabled; localStorage.setItem('voiceResponseEnabled', voiceResponseEnabled); updateVoiceToggleUI(); if(window.speechSynthesis) window.speechSynthesis.cancel(); });
+            // UI Setup
+            document.getElementById('sendButton').onclick = sendMessage;
+            document.getElementById('messageInput').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
+            document.querySelectorAll('.prompt-bubble').forEach(b => { b.onclick = () => { document.getElementById('messageInput').value = b.getAttribute('data-prompt'); sendMessage(); }; });
+            document.getElementById('adminHeaderBtn').onclick = () => openAdminPanel();
+            document.getElementById('newChatDesktop').onclick = newChat;
+            document.getElementById('newChatMobile').onclick = newChat;
+            document.getElementById('resetNameDesktop').onclick = () => { userName = null; localStorage.removeItem('acetUserName'); updateNameDisplay(); showNamePrompt(); };
+            document.getElementById('resetNameMobile').onclick = () => { userName = null; localStorage.removeItem('acetUserName'); updateNameDisplay(); showNamePrompt(); };
+            
+            function updateNameDisplay() { document.getElementById('aiNameDisplay').textContent = aiName; document.getElementById('welcomeTitle').innerHTML = userName ? `Hello, ${userName}! I'm ${aiName} 🤖` : `Hello! I'm ${aiName} 🤖`; }
+            function showNamePrompt() {
+                const ov = document.createElement('div'); ov.className = 'name-overlay';
+                ov.innerHTML = `<div class="name-card"><h2>👋 Welcome!</h2><input id="nameInput" class="name-input" placeholder="Your name"><input id="aiNameInput" class="name-input" placeholder="Call me" value="Achariyan AI"><button id="nameSubmit" class="name-submit">Start</button><button id="nameSkip" class="skip-btn">Skip</button></div>`;
+                document.body.appendChild(ov);
+                document.getElementById('nameSubmit').onclick = () => { const nu = document.getElementById('nameInput').value.trim(); const na = document.getElementById('aiNameInput').value.trim(); if (nu) userName = nu; if (na) aiName = na; if (userName) localStorage.setItem('acetUserName', userName); if (aiName) localStorage.setItem('acetAiName', aiName); updateNameDisplay(); ov.remove(); addMsgToDOM(`Hi ${userName || 'there'}! 🎉 I'm ${aiName}. Ask me anything about ACET!`, 'ai'); addToSession(`Hi ${userName || 'there'}! 🎉 I'm ${aiName}. Ask me anything about ACET!`, 'ai'); };
+                document.getElementById('nameSkip').onclick = () => ov.remove();
+            }
+            
+            const voiceToggleBtns = [document.getElementById('voiceToggleDesktop'), document.getElementById('voiceToggleMobile')];
+            function updateVoiceUI() { voiceToggleBtns.forEach(btn => { if (btn) btn.innerHTML = voiceResponseEnabled ? '<i class="fas fa-volume-up"></i> Voice: ON' : '<i class="fas fa-volume-mute"></i> Voice: OFF'; if (!voiceResponseEnabled) btn?.classList.add('voice-off'); else btn?.classList.remove('voice-off'); }); }
+            voiceToggleBtns.forEach(btn => btn?.addEventListener('click', () => { voiceResponseEnabled = !voiceResponseEnabled; localStorage.setItem('voiceResponseEnabled', voiceResponseEnabled); updateVoiceUI(); if (window.speechSynthesis) window.speechSynthesis.cancel(); }));
+            
+            const themeBtns = [document.getElementById('themeToggleDesktop'), document.getElementById('themeToggleMobile')];
+            themeBtns.forEach(btn => btn?.addEventListener('click', () => { document.body.classList.toggle('dark'); isDark = !isDark; localStorage.setItem('acetDark', isDark); const icon = isDark ? '<i class="fas fa-sun"></i> Light Mode' : '<i class="fas fa-moon"></i> Dark Mode'; themeBtns.forEach(b => { if (b) b.innerHTML = icon; }); }));
+            
+            const deleteBtns = [document.getElementById('deleteAllDesktop'), document.getElementById('deleteAllMobile')];
+            deleteBtns.forEach(btn => btn?.addEventListener('click', () => { if (confirm('Delete ALL chats?')) { sessions = []; createNewSession(); clearMessages(); showWelcome(); renderAllHistories(); } }));
             
             const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
             let recognition = null;
-            if(SpeechRec) { recognition = new SpeechRec(); recognition.continuous = false; recognition.lang = 'en-US'; recognition.onstart = () => { voiceIndicator.style.display = 'flex'; voiceButton.classList.add('active'); }; recognition.onend = () => { voiceIndicator.style.display = 'none'; voiceButton.classList.remove('active'); }; recognition.onresult = (e) => { messageInput.value = e.results[0][0].transcript; sendMessage(); }; recognition.onerror = () => voiceIndicator.style.display = 'none'; } else voiceButton.style.display = 'none';
-            voiceButton.addEventListener('click', () => { if(recognition) recognition.start(); else alert("Voice input not supported in this browser"); });
+            const voiceIndicator = document.getElementById('voiceIndicator');
+            const voiceBtn = document.getElementById('voiceButton');
+            if (SpeechRec) {
+                recognition = new SpeechRec(); recognition.continuous = false; recognition.lang = 'en-US';
+                recognition.onstart = () => { voiceIndicator.style.display = 'flex'; voiceBtn.classList.add('active'); };
+                recognition.onend = () => { voiceIndicator.style.display = 'none'; voiceBtn.classList.remove('active'); };
+                recognition.onresult = (e) => { document.getElementById('messageInput').value = e.results[0][0].transcript; sendMessage(); };
+            } else voiceBtn.style.display = 'none';
+            voiceBtn.onclick = () => { if (recognition) recognition.start(); else alert("Voice not supported"); };
             
-            function showNameCollection() {
-                const overlay = document.createElement('div'); overlay.className = 'name-overlay';
-                overlay.innerHTML = `<div class="name-card"><h2>👋 Welcome!</h2><p>Let's get to know each other</p><input type="text" class="name-input" id="userNameInput" placeholder="What's your name?" autocomplete="off"><input type="text" class="name-input" id="aiNameInput" placeholder="What would you like to call me?" autocomplete="off"><button class="name-submit" id="nameSubmitBtn">Start Chatting</button><button class="skip-btn" id="skipNameBtn">Skip for now</button></div>`;
-                document.body.appendChild(overlay);
-                document.getElementById('nameSubmitBtn').addEventListener('click', () => { const newUserName = document.getElementById('userNameInput').value.trim(); const newAiName = document.getElementById('aiNameInput').value.trim(); if(newUserName) userName = newUserName; if(newAiName) aiName = newAiName; if(userName) localStorage.setItem('acetUserName', userName); if(aiName) localStorage.setItem('acetAiName', aiName); updateNameDisplay(); overlay.remove(); addMessage(`Hi${userName ? ' ' + userName : ''}! I'm ${aiName}. Ask me anything!`, 'ai'); }); document.getElementById('skipNameBtn').addEventListener('click', () => overlay.remove());
+            document.getElementById('menuToggleBtn').onclick = () => { document.getElementById('mobileDrawer').classList.add('open'); document.getElementById('drawerOverlay').classList.add('open'); };
+            document.getElementById('closeDrawerBtn').onclick = closeDrawer;
+            document.getElementById('drawerOverlay').onclick = closeDrawer;
+            
+            if (isDark) { document.body.classList.add('dark'); themeBtns.forEach(b => { if (b) b.innerHTML = '<i class="fas fa-sun"></i> Light Mode'; }); }
+            updateNameDisplay(); updateVoiceUI();
+            if (!currentSessionId || !sessions.find(s => s.id === currentSessionId)) {
+                if (sessions.length > 0) { currentSessionId = sessions[0].id; persistCurrent(); }
+                else createNewSession();
             }
+            loadSession(currentSessionId);
+            if (!userName) setTimeout(showNamePrompt, 300);
             
-            if(isDark) { document.body.classList.add('dark'); themeToggle.innerHTML = '<i class="fas fa-sun"></i> Light Mode'; }
-            updateNameDisplay(); updateVoiceToggleUI(); renderHistory();
-            if(!userName) setTimeout(showNameCollection, 300);
+            if (localStorage.getItem('acetAdminLoggedIn') === 'true') isAdminLoggedIn = true;
         })();
     </script>
 </body>
